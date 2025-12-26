@@ -7,18 +7,108 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('raw')) {
                 const id = urlParams.get('raw');
+                const currentUrl = window.location.href;
                 
                 // Stop the browser from parsing the rest of the original file
                 if (window.stop) window.stop();
 
-                // Completely overwrite the document
+                // Completely overwrite the document with the Access Denied UI
+                // We use \x3C to escape < to prevent the parser from seeing script tags inside the string
                 document.open();
                 document.write(`
 <!DOCTYPE html>
-<html>
-<body style="background-color: #020205; color: #a1a1aa; font-family: monospace; margin: 20px; white-space: pre-wrap;">-- You cant look
--- Source is protected by Valkyrie.rbx
-Script ID: ${id}</body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - Valkyrie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        eclipse: { black: '#020205', panel: '#11111b' }
+                    },
+                    fontFamily: {
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    \x3C/script>
+</head>
+<body class="bg-eclipse-black h-screen w-screen flex items-center justify-center font-sans overflow-hidden">
+    
+    <!-- Background Elements -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="relative group max-w-md w-full mx-4">
+        <!-- Glow border -->
+        <div class="absolute -inset-0.5 bg-gradient-to-b from-red-600/50 to-transparent rounded-2xl blur opacity-50 group-hover:opacity-75 transition duration-500"></div>
+        
+        <div class="relative bg-eclipse-panel border border-red-500/20 p-8 rounded-2xl shadow-2xl backdrop-blur-xl">
+            
+            <!-- Access Denied Bubble -->
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20 shadow-[0_0_30px_rgba(220,38,38,0.2)] animate-pulse">
+                    <i class="fa-solid fa-lock text-3xl text-red-500"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-[0.2em] mb-1">ACCESS DENIED</h1>
+                <p class="text-xs text-red-400/60 font-mono">RESTRICTED ENVIRONMENT</p>
+            </div>
+
+            <!-- Script ID Info -->
+            <div class="bg-black/40 rounded-lg border border-white/5 p-4 mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Configuration ID</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>
+                </div>
+                <div class="font-mono text-sm text-gray-300 break-all select-all">${id}</div>
+            </div>
+
+            <!-- Loader Embed -->
+            <div class="space-y-2">
+                <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1">Lua Execution Embed</label>
+                <div class="bg-[#050508] border border-blue-500/20 rounded-lg p-3 flex items-center justify-between group/code relative hover:border-blue-500/40 transition-colors">
+                    <code class="font-mono text-[10px] text-blue-400 truncate mr-4 select-all w-full">loadstring(game:HttpGet("${currentUrl}"))()</code>
+                    <button onclick="copyLoader()" class="text-gray-500 hover:text-white transition-colors p-2 -mr-2">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
+                    
+                    <!-- Success tooltip -->
+                    <div id="copy-tooltip" class="absolute right-0 -top-8 bg-blue-600 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity">Copied!</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        function copyLoader() {
+            const text = 'loadstring(game:HttpGet("${currentUrl}"))()';
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                // Show tooltip
+                const tooltip = document.getElementById('copy-tooltip');
+                tooltip.classList.remove('opacity-0');
+                setTimeout(() => tooltip.classList.add('opacity-0'), 2000);
+            } catch (err) {
+                console.error('Unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        }
+    \x3C/script>
+</body>
 </html>`);
                 document.close();
 
