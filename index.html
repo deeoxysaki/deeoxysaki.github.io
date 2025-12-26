@@ -1,778 +1,480 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lua64</title>
-    
-    <!-- Tailwind CSS -->
+    <title>valkyrie.rbx</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Roboto & Material Symbols Outlined -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" />
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         eclipse: {
-                            900: '#050507',
-                            800: '#0E1014',
-                            700: '#16191F',
-                            600: '#20242D',
-                            500: '#3B82F6',
-                            400: '#60A5FA',
-                            100: '#E2E8F0',
+                            black: '#020205',
+                            dark: '#0a0a12',
+                            panel: '#11111b',
+                            blue: '#3b82f6',
+                            glow: '#60a5fa',
                         }
                     },
+                    boxShadow: {
+                        'eclipse-glow': '0 0 20px rgba(59, 130, 246, 0.5)',
+                        'eclipse-border': '0 0 10px rgba(59, 130, 246, 0.3)',
+                    },
                     fontFamily: {
-                        sans: ['Roboto', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        mono: ['"Fira Code"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif']
                     }
                 }
             }
         }
     </script>
-
     <style>
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0E1014; }
-        ::-webkit-scrollbar-thumb { background: #20242D; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3B82F6; }
-
-        .ripple { position: relative; overflow: hidden; }
-        .ripple:after {
-            content: ""; display: block; position: absolute; width: 100%; height: 100%; top: 0; left: 0;
-            pointer-events: none; background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
-            background-repeat: no-repeat; background-position: 50%; transform: scale(10, 10); opacity: 0;
-            transition: transform .5s, opacity 1s;
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
-        .ripple:active:after { transform: scale(0, 0); opacity: 0.1; transition: 0s; }
-
-        .active-tab {
-            background-color: rgba(59, 130, 246, 0.15);
-            color: #60A5FA !important;
-            border-right: 3px solid #60A5FA;
+        ::-webkit-scrollbar-track {
+            background: #0a0a12; 
         }
-        
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar-thumb {
+            background: #1e1e2e; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6; 
+        }
 
-        .modal-enter { opacity: 0; transform: scale(0.95); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 200ms ease-out, transform 200ms ease-out; }
+        /* Eclipse Background Animation */
+        .bg-eclipse {
+            background: radial-gradient(circle at center, #0f172a 0%, #000000 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .eclipse-orb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: pulse 8s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .glass-panel {
+            background: rgba(17, 17, 27, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(90deg, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 100%);
+            border-left: 3px solid #3b82f6;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(59,130,246,0.8);
+        }
     </style>
 </head>
-<body class="bg-eclipse-900 text-eclipse-100 font-sans h-screen flex overflow-hidden selection:bg-eclipse-500 selection:text-white">
+<body class="bg-eclipse h-screen w-screen flex items-center justify-center text-gray-300 font-sans selection:bg-blue-500 selection:text-white">
 
-    <!-- Raw View Container (Hidden by default) -->
-    <div id="raw-view" class="hidden w-full h-full bg-black text-white p-4 font-mono text-sm whitespace-pre-wrap break-all overflow-auto"></div>
+    <!-- Background Orb -->
+    <div class="eclipse-orb"></div>
 
-    <!-- Main UI Container -->
-    <div id="app-container" class="flex w-full h-full overflow-hidden">
-        <!-- Left Tab Container (Sidebar) -->
-        <aside class="w-64 flex-shrink-0 bg-eclipse-800 border-r border-eclipse-600 flex flex-col shadow-xl z-20">
-            <div class="pt-6 pb-2 px-6">
-                <div class="flex items-center space-x-2 mb-2">
-                    <span class="material-symbols-outlined text-eclipse-500 text-3xl">token</span>
-                    <h1 class="text-2xl font-bold tracking-wider text-white">Lua64</h1>
-                </div>
+    <!-- Main Interface Window -->
+    <div class="glass-panel w-[900px] h-[600px] rounded-xl flex shadow-2xl z-10 overflow-hidden relative">
+        
+        <!-- Sidebar (Left Center Navigation) -->
+        <div class="w-64 bg-eclipse-dark/90 border-r border-white/5 flex flex-col shrink-0">
+            <!-- Header -->
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-white tracking-wider font-mono flex items-center gap-2">
+                    <i class="fa-solid fa-moon text-blue-500 animate-pulse"></i>
+                    valkyrie<span class="text-blue-500">.rbx</span>
+                </h1>
+                <div class="text-xs text-blue-400 mt-1 opacity-70">v2.4.0-release</div>
             </div>
 
-            <div class="mx-0 h-px bg-gradient-to-r from-transparent via-eclipse-600 to-transparent mb-4"></div>
+            <!-- Horizontal Line -->
+            <div class="w-full h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent mb-4"></div>
 
-            <nav class="flex-1 px-3 space-y-1 overflow-y-auto">
-                <button onclick="window.app.openTab('scripts')" id="btn-scripts" class="ripple w-full flex items-center px-4 py-3 text-sm font-medium rounded-r-lg transition-all duration-200 text-gray-400 hover:bg-eclipse-700 hover:text-white group">
-                    <span class="material-symbols-outlined mr-3 text-[20px] group-hover:scale-110 transition-transform">description</span>
+            <!-- Tab Container -->
+            <nav class="flex-1 px-3 space-y-2 overflow-y-auto">
+                <button onclick="switchTab('scripts')" id="tab-scripts" class="tab-btn active w-full text-left px-4 py-3 rounded-r-lg hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-3">
+                    <i class="fa-solid fa-code w-5 text-center"></i>
                     Scripts
                 </button>
-
-                <button onclick="window.app.openTab('loaders')" id="btn-loaders" class="ripple w-full flex items-center px-4 py-3 text-sm font-medium rounded-r-lg transition-all duration-200 text-gray-400 hover:bg-eclipse-700 hover:text-white group">
-                    <span class="material-symbols-outlined mr-3 text-[20px] group-hover:scale-110 transition-transform">terminal</span>
+                <button onclick="switchTab('loaders')" id="tab-loaders" class="tab-btn w-full text-left px-4 py-3 rounded-r-lg hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-3">
+                    <i class="fa-solid fa-download w-5 text-center"></i>
                     Loaders
-                </button>
-
-                <div class="pt-4 pb-2 px-4 text-xs font-bold text-gray-600 uppercase tracking-widest">System</div>
-                
-                <button onclick="window.app.openTab('settings')" id="btn-settings" class="ripple w-full flex items-center px-4 py-3 text-sm font-medium rounded-r-lg transition-all duration-200 text-gray-400 hover:bg-eclipse-700 hover:text-white group">
-                    <span class="material-symbols-outlined mr-3 text-[20px] group-hover:scale-110 transition-transform">settings</span>
-                    Settings
                 </button>
             </nav>
 
-            <!-- User Profile -->
-            <div class="p-4 border-t border-eclipse-600 bg-eclipse-800">
+            <!-- User Profile / Footer -->
+            <div class="p-4 bg-black/20 border-t border-white/5">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold shadow-lg" id="user-avatar">
-                        <span class="material-symbols-outlined text-white text-sm">person</span>
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center text-black font-bold text-xs shadow-eclipse-glow">
+                        <i class="fa-brands fa-google"></i>
                     </div>
-                    <div class="overflow-hidden">
-                        <p class="text-sm font-medium text-white truncate" id="user-name">Guest</p>
-                        <p class="text-xs text-gray-500 truncate" id="user-status">Connecting...</p>
+                    <div class="flex flex-col overflow-hidden">
+                        <span id="user-id-display" class="text-xs font-bold text-white truncate w-32">Loading...</span>
+                        <span class="text-[10px] text-green-400">● Connected</span>
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
 
         <!-- Main Content Area -->
-        <main class="flex-1 relative flex flex-col h-full overflow-hidden bg-eclipse-900">
-            <header class="h-14 bg-eclipse-900 border-b border-eclipse-600 flex items-center justify-between px-6 flex-shrink-0">
-                <div class="text-sm text-gray-400 breadcrumb">
-                    <!-- Breadcrumbs injected via JS -->
+        <main class="flex-1 bg-eclipse-panel/50 p-8 overflow-y-auto relative">
+            
+            <!-- Scripts Tab -->
+            <div id="content-scripts" class="tab-content animate-fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-white">Execution Library</h2>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <span class="material-symbols-outlined text-gray-400 hover:text-white cursor-pointer text-[20px]">notifications</span>
-                    <span class="material-symbols-outlined text-gray-400 hover:text-white cursor-pointer text-[20px]">help</span>
-                </div>
-            </header>
 
-            <!-- Tab Content Wrapper -->
-            <div id="content-area" class="flex-1 overflow-auto p-8 relative">
+                <!-- Scripts List Container (Dynamic Items Added Here) -->
+                <div id="scripts-list" class="space-y-3 mb-4">
+                    <!-- Items will be injected here via JS -->
+                </div>
+
+                <!-- Add Button Container -->
+                <div class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-lg bg-black/20 hover:bg-black/30 transition-colors">
+                    <button onclick="toggleModal(true)" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        New Scripts
+                    </button>
+                    <p class="text-[10px] text-gray-500 mt-2">Add a new script configuration</p>
+                </div>
+            </div>
+
+            <!-- Loaders Tab -->
+            <div id="content-loaders" class="tab-content hidden animate-fade-in">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-white">Scripts Loaders</h2>
+                    <p class="text-xs text-gray-500 mt-1">Manage initialization scripts for different engines.</p>
+                </div>
+
+                <div id="loaders-list" class="space-y-3">
+                     <!-- Loaders will be injected here via JS -->
+                </div>
+
+                <div id="empty-loaders-msg" class="flex items-center justify-center h-32 text-gray-500 text-sm italic border border-white/5 rounded-lg bg-black/20">
+                    No loaders generated. Create a script to generate a loader.
+                </div>
+            </div>
+
+        </main>
+
+        <!-- New Script Modal (Hidden by default) -->
+        <div id="new-script-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-[#11111b] border border-blue-500/30 w-full max-w-sm rounded-xl shadow-2xl p-6 transform transition-all">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-code text-blue-500"></i> New Configuration
+                    </h3>
+                    <button onclick="toggleModal(false)" class="text-gray-500 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
                 
-                <!-- SCRIPTS TAB -->
-                <section id="tab-scripts" class="fade-in max-w-6xl mx-auto hidden">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h2 class="text-2xl font-bold text-white">Script Manager</h2>
-                            <p class="text-gray-400 text-sm mt-1">Manage and execute your Lua scripts</p>
+                <div class="space-y-4">
+                    <!-- Config Name Input -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Config Name</label>
+                        <input id="script-name-input" type="text" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-gray-600" placeholder="e.g. Auto-Farm V2">
+                    </div>
+                    
+                    <!-- File Upload -->
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Upload File</label>
+                        <div class="relative border-2 border-dashed border-white/10 rounded-lg p-6 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-center cursor-pointer group">
+                            <input type="file" id="file-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-600 group-hover:text-blue-500 mb-2 transition-colors"></i>
+                            <p class="text-xs text-gray-400 group-hover:text-gray-300">Drag file or click to browse</p>
+                            <p class="text-[10px] text-gray-600 mt-1">Supports .lua, .txt</p>
                         </div>
-                        <button onclick="window.app.openEditor('new')" class="bg-eclipse-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20 flex items-center">
-                            <span class="material-symbols-outlined text-sm mr-2">add</span>
-                            New Script
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-3 pt-4">
+                        <button onclick="toggleModal(false)" class="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-bold text-white transition-colors">
+                            Cancel
+                        </button>
+                        <button onclick="submitScript()" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold text-white shadow-lg shadow-blue-900/20 transition-colors">
+                            Submit
                         </button>
                     </div>
-
-                    <!-- Scripts Grid (Populated by Firestore) -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="scripts-grid">
-                        <!-- Loading Skeleton -->
-                        <div class="p-5 rounded bg-eclipse-800 border border-eclipse-600 animate-pulse">
-                            <div class="flex justify-between mb-4">
-                                <div class="w-12 h-12 bg-eclipse-700 rounded"></div>
-                                <div class="w-12 h-6 bg-eclipse-700 rounded"></div>
-                            </div>
-                            <div class="h-6 bg-eclipse-700 rounded w-3/4 mb-2"></div>
-                            <div class="h-4 bg-eclipse-700 rounded w-full mb-6"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- LOADERS TAB -->
-                <section id="tab-loaders" class="fade-in max-w-5xl mx-auto hidden">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold text-white">Generated Loaders</h2>
-                        <button onclick="window.app.clearLoaders()" class="text-xs text-red-400 hover:text-white uppercase tracking-wider font-bold">Clear All</button>
-                    </div>
-                    
-                    <div id="loaders-container" class="space-y-6">
-                        <!-- Loaders will be injected here -->
-                        <div id="loaders-placeholder" class="text-center py-12 text-gray-500 border border-dashed border-eclipse-700 rounded-2xl">
-                            <span class="material-symbols-outlined text-4xl mb-2 opacity-50">code_off</span>
-                            <p class="text-sm">No loaders generated.<br>Use "Download Encoded Source" on a script to create one.</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- SETTINGS TAB -->
-                <section id="tab-settings" class="fade-in max-w-3xl mx-auto hidden">
-                    <h2 class="text-2xl font-bold text-white mb-6">System Settings</h2>
-                    <div class="space-y-6">
-                        <div class="p-6 rounded-2xl bg-eclipse-800 border border-eclipse-600">
-                            <h3 class="text-lg font-medium text-white mb-4">Account</h3>
-                            <div class="flex items-center justify-between py-3 border-b border-eclipse-700/50">
-                                <div>
-                                    <div class="text-sm text-gray-200">Cloud Sync</div>
-                                    <div class="text-xs text-gray-500">Sync status with database</div>
-                                </div>
-                                <div class="flex items-center">
-                                    <span class="w-2 h-2 rounded-full bg-green-500 mr-2 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-                                    <span class="text-sm text-green-400">Connected</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </main>
-    </div>
-
-    <!-- NEW/EDIT SCRIPT MODAL -->
-    <div id="modal-editor" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="window.app.closeEditor()"></div>
-        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-eclipse-800 border border-eclipse-600 rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="flex items-center justify-between p-4 border-b border-eclipse-600">
-                <h3 id="modal-title" class="text-lg font-bold text-white">New Script</h3>
-                <button onclick="window.app.closeEditor()" class="text-gray-400 hover:text-white">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
-            
-            <div class="p-6 space-y-4 overflow-y-auto">
-                <input type="hidden" id="script-id"> 
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1">SCRIPT NAME (LUA ONLY)</label>
-                    <input type="text" id="script-name" placeholder="my_script.lua" class="w-full bg-eclipse-900 border border-eclipse-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1">DESCRIPTION</label>
-                    <input type="text" id="script-desc" placeholder="Brief description of functionality..." class="w-full bg-eclipse-900 border border-eclipse-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
-                </div>
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-gray-400 mb-1">CODE</label>
-                    <textarea id="script-code" class="w-full h-64 bg-eclipse-900 border border-eclipse-600 rounded-lg px-4 py-3 text-sm font-mono text-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none" spellcheck="false">-- Enter your Lua code here
-function main()
-    print("Hello Lua64")
-end</textarea>
-                </div>
-            </div>
-
-            <div class="p-4 border-t border-eclipse-600 flex justify-end space-x-3 bg-eclipse-800 rounded-b-xl">
-                <button onclick="window.app.closeEditor()" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-eclipse-700 transition-colors">Cancel</button>
-                <button onclick="window.app.saveScript()" class="px-4 py-2 rounded-lg text-sm bg-eclipse-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-colors font-medium">Save Script</button>
             </div>
         </div>
+
     </div>
 
-    <!-- DELETE CONFIRMATION MODAL -->
-    <div id="modal-delete" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="window.app.cancelDelete()"></div>
-        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-eclipse-800 border border-eclipse-600 rounded-xl shadow-2xl p-6 text-center">
-            <div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4 text-red-500">
-                <span class="material-symbols-outlined text-2xl">delete</span>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-2">Delete Script?</h3>
-            <p class="text-sm text-gray-400 mb-6">Are you sure you want to delete <span id="delete-target-name" class="text-white font-mono">script.lua</span>? This action cannot be undone.</p>
-            
-            <div class="flex space-x-3">
-                <button onclick="window.app.cancelDelete()" class="flex-1 px-4 py-2 rounded-lg text-sm bg-eclipse-700 text-white hover:bg-eclipse-600 transition-colors">Cancel</button>
-                <button onclick="window.app.confirmDelete()" class="flex-1 px-4 py-2 rounded-lg text-sm bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-900/20 transition-colors">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Application Logic -->
-    <script type="module">
-        // --- 1. CONFIGURATION & IMPORTS ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-lua64';
-        const firebaseConfig = JSON.parse(__firebase_config);
-        
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        // Global State
-        let currentUser = null;
-        let deleteTargetId = null;
-        let scriptsData = {}; 
-
-        // --- RAW VIEW HANDLER ---
-        // Checks if 'raw' parameter exists. If so, hijack the UI.
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('raw')) {
-            const rawContent = urlParams.get('raw');
-            document.getElementById('app-container').classList.add('hidden');
-            const rawView = document.getElementById('raw-view');
-            rawView.classList.remove('hidden');
-            rawView.textContent = rawContent;
-            // Stop auth init for raw view
-        } else {
-            // Only start auth if not in raw mode
-            initAuth();
-        }
-
-        // --- 2. AUTHENTICATION ---
-        async function initAuth() {
-            try {
-                document.getElementById('user-status').textContent = "Authenticating...";
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await auth.signInWithCustomToken(__initial_auth_token);
-                } else {
-                    await auth.signInAnonymously();
-                }
-            } catch (error) {
-                console.error("Auth Failed:", error);
-                document.getElementById('user-status').textContent = "Offline Mode";
-            }
-        }
-
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('user-name').textContent = user.isAnonymous ? "Guest User" : "Developer";
-                document.getElementById('user-status').textContent = user.uid.substring(0, 8);
-                document.getElementById('user-avatar').classList.remove('bg-gray-500');
-                document.getElementById('user-avatar').classList.add('bg-gradient-to-tr', 'from-blue-500', 'to-purple-500');
-                initDataListener(user.uid);
-            } else {
-                currentUser = null;
-                document.getElementById('user-name').textContent = "Disconnected";
-            }
-        });
-
-        // --- 3. FIRESTORE LISTENERS ---
-        function initDataListener(userId) {
-            const scriptsRef = db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('scripts').orderBy('createdAt', 'desc');
-
-            scriptsRef.onSnapshot((snapshot) => {
-                const grid = document.getElementById('scripts-grid');
-                
-                if (snapshot.empty) {
-                    const storageKey = `lua64_seeded_${userId}`;
-                    if (!localStorage.getItem(storageKey)) {
-                        db.collection('artifacts').doc(appId).collection('users').doc(userId).collection('scripts').add({
-                            name: "print.lua",
-                            description: "Example Protected Script",
-                            code: 'print("Protected file by by justvpn")',
-                            size: "0.1kb",
-                            active: true,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        localStorage.setItem(storageKey, 'true');
-                    }
-
-                    grid.innerHTML = `
-                        <div class="col-span-full text-center py-12 text-gray-500">
-                            <span class="material-symbols-outlined text-4xl mb-2 opacity-50">folder_open</span>
-                            <p>No scripts found. Create one to get started.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                let html = '';
-                scriptsData = {}; 
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const id = doc.id;
-                    scriptsData[id] = data;
-                    const isProtected = data.name === 'print.lua';
-                    
-                    let icon = 'javascript';
-                    let colorClass = 'text-blue-400';
-                    let bgClass = 'from-blue-500/10 to-blue-600/10 border-blue-500/20';
-
-                    if (data.name.includes('ESP') || data.name.includes('Visual')) {
-                        icon = 'visibility';
-                        colorClass = 'text-purple-400';
-                        bgClass = 'from-purple-500/10 to-purple-600/10 border-purple-500/20';
-                    } else if (data.name.includes('Test') || data.name.includes('Debug')) {
-                        icon = 'bug_report';
-                        colorClass = 'text-orange-400';
-                        bgClass = 'from-orange-500/10 to-orange-600/10 border-orange-500/20';
-                    } else if (isProtected) {
-                        icon = 'shield_lock';
-                        colorClass = 'text-yellow-400';
-                        bgClass = 'from-yellow-500/10 to-orange-500/10 border-yellow-500/20';
-                    }
-
-                    html += `
-                        <div id="${id}" class="p-5 rounded bg-eclipse-800 border border-eclipse-600 hover:border-eclipse-500 transition-all hover:shadow-lg hover:shadow-blue-900/10 group relative flex flex-col fade-in">
-                            <div class="flex items-start justify-between mb-4">
-                                <div class="w-12 h-12 rounded bg-gradient-to-br ${bgClass} border flex items-center justify-center ${colorClass}">
-                                    <span class="material-symbols-outlined">${icon}</span>
-                                </div>
-                                <span class="text-xs font-mono text-gray-600 bg-eclipse-900 px-2 py-1 rounded border border-eclipse-700">${data.size || '0kb'}</span>
-                            </div>
-                            
-                            <div class="flex-1">
-                                <h3 class="text-white font-medium mb-1 text-lg truncate" title="${data.name}">${data.name}</h3>
-                                <p class="text-sm text-gray-500 mb-6 line-clamp-2">${data.description || 'No description.'}</p>
-                            </div>
-                            
-                            <div class="flex items-center justify-between pt-4 border-t border-eclipse-700/50 mt-auto">
-                                <div class="flex items-center space-x-1 -ml-2">
-                                    ${!isProtected ? `
-                                    <button onclick="window.app.openEditor('edit', '${id}')" class="p-2 text-gray-400 hover:text-white hover:bg-eclipse-700 rounded transition-colors" title="Edit Script">
-                                        <span class="material-symbols-outlined text-[20px]">edit</span>
-                                    </button>` : ''}
-                                    <button onclick="window.app.downloadEncoded('${id}')" class="p-2 text-gray-400 hover:text-blue-400 hover:bg-eclipse-700 rounded transition-colors relative group" title="Download Encoded Source">
-                                        <span class="material-symbols-outlined text-[20px]">enhanced_encryption</span>
-                                    </button>
-                                    ${!isProtected ? `
-                                    <button onclick="window.app.requestDelete('${id}', '${data.name}')" class="p-2 text-gray-400 hover:text-red-400 hover:bg-eclipse-700 rounded transition-colors" title="Delete Script">
-                                        <span class="material-symbols-outlined text-[20px]">delete</span>
-                                    </button>
-                                    <button onclick="window.app.generateLink('${id}')" class="p-2 text-gray-400 hover:text-green-400 hover:bg-eclipse-700 rounded transition-colors" title="Generate Link">
-                                        <span class="material-symbols-outlined text-[20px]">link</span>
-                                    </button>` : ''}
-                                </div>
-
-                                ${!isProtected ? `
-                                <label class="inline-flex items-center cursor-pointer ml-2">
-                                    <input type="checkbox" onchange="window.app.toggleScript('${id}', this.checked)" class="sr-only peer" ${data.active ? 'checked' : ''}>
-                                    <div class="relative w-9 h-5 bg-eclipse-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-gray-400 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-eclipse-500 peer-checked:after:bg-white peer-checked:after:border-white"></div>
-                                </label>` : `
-                                <div class="flex items-center space-x-1 opacity-50 cursor-not-allowed" title="This file is protected">
-                                    <span class="material-symbols-outlined text-xs text-yellow-500">lock</span>
-                                    <span class="text-[10px] uppercase font-bold text-yellow-500 tracking-wider">Protected</span>
-                                </div>`}
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                grid.innerHTML = html;
-            }, (error) => {
-                console.error("Data Sync Error:", error);
-            });
-        }
-
-        // --- 4. EXPOSED FUNCTIONS (Window Attachment) ---
-        
-        window.app = {
-            openTab: (tabName) => {
-                const sections = document.querySelectorAll('#content-area > section');
-                sections.forEach(section => section.classList.add('hidden'));
-
-                const buttons = document.querySelectorAll('nav button');
-                buttons.forEach(btn => {
-                    btn.classList.remove('active-tab');
-                    btn.classList.remove('bg-eclipse-700');
-                });
-
-                const activeSection = document.getElementById('tab-' + tabName);
-                if (activeSection) activeSection.classList.remove('hidden');
-
-                const activeBtn = document.getElementById('btn-' + tabName);
-                if (activeBtn) activeBtn.classList.add('active-tab');
-
-                const breadcrumb = document.querySelector('.breadcrumb');
-                breadcrumb.innerHTML = `Lua64 <span class="mx-2">/</span> <span class="text-white capitalize">${tabName}</span>`;
-            },
-
-            copyLoader: (id) => {
-                const codeArea = document.getElementById('loader-code-' + id);
-                codeArea.select();
-                codeArea.setSelectionRange(0, 99999); 
-                
-                try {
-                    document.execCommand('copy');
-                    const btn = document.getElementById('copy-btn-' + id);
-                    const originalHTML = btn.innerHTML;
-                    
-                    btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> Copied!';
-                    btn.classList.remove('text-gray-300');
-                    btn.classList.add('text-green-400');
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = originalHTML;
-                        btn.classList.add('text-gray-300');
-                        btn.classList.remove('text-green-400');
-                    }, 2000);
-                } catch (err) {
-                    console.error("Copy failed", err);
-                }
-            },
-
-            clearLoaders: () => {
-                const container = document.getElementById('loaders-container');
-                container.innerHTML = `
-                    <div id="loaders-placeholder" class="text-center py-12 text-gray-500 border border-dashed border-eclipse-700 rounded-2xl">
-                        <span class="material-symbols-outlined text-4xl mb-2 opacity-50">code_off</span>
-                        <p class="text-sm">No loaders generated.<br>Use "Download Encoded Source" on a script to create one.</p>
-                    </div>
-                `;
-            },
-
-            openEditor: (mode, scriptId = null) => {
-                const editorModal = document.getElementById('modal-editor');
-                const modalTitle = document.getElementById('modal-title');
-                const nameInput = document.getElementById('script-name');
-                const descInput = document.getElementById('script-desc');
-                const codeInput = document.getElementById('script-code');
-                const idInput = document.getElementById('script-id');
-
-                editorModal.classList.remove('hidden');
-                editorModal.classList.add('modal-enter');
-                requestAnimationFrame(() => {
-                    editorModal.classList.remove('modal-enter');
-                    editorModal.classList.add('modal-enter-active');
-                });
-
-                if (mode === 'edit' && scriptId) {
-                    const data = scriptsData[scriptId] || {};
-                    modalTitle.textContent = 'Edit Script';
-                    nameInput.value = data.name || '';
-                    descInput.value = data.description || '';
-                    codeInput.value = data.code || '';
-                    idInput.value = scriptId;
-                } else {
-                    modalTitle.textContent = 'New Script';
-                    nameInput.value = '';
-                    descInput.value = '';
-                    codeInput.value = '-- Enter your Lua code here\n';
-                    idInput.value = '';
-                }
-            },
-
-            closeEditor: () => {
-                document.getElementById('modal-editor').classList.add('hidden');
-            },
-
-            saveScript: async () => {
-                if (!currentUser) return;
-
-                const nameInput = document.getElementById('script-name');
-                const descInput = document.getElementById('script-desc');
-                const codeInput = document.getElementById('script-code');
-                const idInput = document.getElementById('script-id');
-                const btn = document.querySelector('#modal-editor button:last-child');
-
-                let name = nameInput.value.trim();
-                if (!name) {
-                    nameInput.classList.add('border-red-500');
-                    setTimeout(() => nameInput.classList.remove('border-red-500'), 1000);
-                    return;
-                }
-                if (!name.toLowerCase().endsWith('.lua')) {
-                    name += '.lua';
-                }
-
-                const scriptId = idInput.value; // Empty if new
-                const size = (codeInput.value.length / 1024).toFixed(1) + 'kb';
-
-                btn.textContent = 'Saving...';
-                btn.classList.add('opacity-75');
-
-                try {
-                    const collectionRef = db.collection('artifacts').doc(appId).collection('users').doc(currentUser.uid).collection('scripts');
-
-                    if (scriptId) {
-                        await collectionRef.doc(scriptId).update({
-                            name: name,
-                            description: descInput.value.trim(),
-                            code: codeInput.value,
-                            size: size,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    } else {
-                        await collectionRef.add({
-                            name: name,
-                            description: descInput.value.trim(),
-                            code: codeInput.value,
-                            size: size,
-                            active: true,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
-                    window.app.closeEditor();
-                } catch (e) {
-                    console.error("Save Error", e);
-                    btn.textContent = 'Error!';
-                } finally {
-                    btn.textContent = 'Save Script';
-                    btn.classList.remove('opacity-75');
-                }
-            },
-
-            requestDelete: (scriptId, scriptName) => {
-                deleteTargetId = scriptId;
-                document.getElementById('delete-target-name').textContent = scriptName;
-                document.getElementById('modal-delete').classList.remove('hidden');
-            },
-
-            cancelDelete: () => {
-                document.getElementById('modal-delete').classList.add('hidden');
-                deleteTargetId = null;
-            },
-
-            confirmDelete: async () => {
-                if (deleteTargetId && currentUser) {
-                    const btn = document.querySelector('#modal-delete button:last-child');
-                    btn.textContent = 'Deleting...';
-                    try {
-                        await db.collection('artifacts').doc(appId).collection('users').doc(currentUser.uid).collection('scripts').doc(deleteTargetId).delete();
-                    } catch (e) {
-                        console.error("Delete Error", e);
-                    }
-                }
-                window.app.cancelDelete();
-                setTimeout(() => {
-                     document.querySelector('#modal-delete button:last-child').textContent = 'Delete';
-                }, 500);
-            },
-
-            toggleScript: async (scriptId, isActive) => {
-                if (!currentUser) return;
-                try {
-                    await db.collection('artifacts').doc(appId).collection('users').doc(currentUser.uid).collection('scripts').doc(scriptId).update({
-                        active: isActive
-                    });
-                } catch(e) {
-                    console.error("Toggle Error", e);
-                }
-            },
-
-            // --- HELPER: CENTRALIZED OBFUSCATION LOGIC ---
-            getObfuscatedCode: (scriptId) => {
-                const data = scriptsData[scriptId];
-                if (!data || !data.code) return null;
-
-                const code = data.code.trim();
-                const isUrl = code.startsWith('http://') || code.startsWith('https://');
-                let finalLoader = "";
-
-                if (isUrl) {
-                    // --- URL METHOD ---
-                    let tableContent = [];
-                    for (let i = 0; i < code.length; i++) {
-                        const charCode = code.charCodeAt(i);
-                        const val = Math.random() > 0.5 
-                            ? '0x' + charCode.toString(16).toUpperCase() 
-                            : charCode;
-                        tableContent.push(`[${i+1}]=${val}`);
-                    }
-                    const tableStr = `({${tableContent.join(',')}})`;
-                    finalLoader = `local _g,s,m,t=getfenv(),string,math,table;local _b=${tableStr};local _v=(_g.game);local _f=((99*2)/4+50>=2)and s.char or nil;local _e=function(t)local o="";for i=1,#t do o=o.._f(t[i])end;return o end;if(type(_b)=="table"and(10^2==100))then _g.loadstring(_v:HttpGet(_e(_b)))()end`;
-                } else {
-                    // --- NON-URL METHOD ---
-                    const rVar = () => "_" + Math.random().toString(36).substring(7).replace(/[0-9]/g, '');
-                    const vG = rVar(), vS = rVar(), vM = rVar();
-                    const vChar = rVar(), vByteTable = rVar(), vDecFunc = rVar(); 
-                    const vJunkObj = rVar(), vJunkName = "qjQGJLEa"; 
-                    const vW = rVar(), vO = rVar(), vK = rVar(), vD = rVar(); 
-                    const vI = rVar(), vC = rVar(), vE = rVar(), vT = rVar(); 
-                    
-                    let wValue = 5805 + Math.floor(Math.random() * 500);
-                    const startW = wValue;
-
-                    let tableItems = [];
-                    for (let i = 0; i < code.length; i++) {
-                        const targetChar = code.charCodeAt(i);
-                        let storedVal = ((wValue % 0x8e2) < 0x471) ? targetChar : targetChar - 1;
-                        let expr = "";
-                        const method = Math.floor(Math.random() * 6);
-                        
-                        if (method === 0) {
-                            expr = `${vM}.floor((${vM}.sqrt((${storedVal}^2)) + ((${vM}.random(1,1) - 1) * 999)))`;
-                        } else if (method === 1) {
-                            const mul = 2;
-                            expr = `${vM}.floor((${vM}.abs(-${storedVal * mul}) / (2 - (${vM}.random()*0))) + ${vM}.sin(0))`;
-                        } else if (method === 2) {
-                            const off = Math.floor(Math.random() * 10) + 1;
-                            expr = `${vM}.floor(((0x${(storedVal + off).toString(16).toUpperCase()} - ${off}) + ${vM}.cos(0) - 1))`;
-                        } else if (method === 3 && storedVal % 2 === 0) {
-                            expr = `${vM}.floor(((0x${(storedVal / 2).toString(16).toUpperCase()} * 2) + (${vM}.random()*0)))`;
-                        } else if (method === 4) {
-                            expr = `${vM}.floor((${vM}.sqrt((1^2) * (${storedVal}^2)) + (${vM}.random()*0)))`;
-                        } else {
-                            expr = `${vM}.floor(((0x${storedVal.toString(16).toUpperCase()} * 1) + ${vM}.log(1)))`;
-                        }
-                        tableItems.push(expr);
-                        wValue++;
-                    }
-                    const smartTableStr = `({${tableItems.join(',')}})`;
-
-                    let junkCalls = "";
-                    const junkCount = Math.max(3, Math.floor(code.length / 50)); 
-                    for(let j=0; j<junkCount; j++) {
-                        const junkStr = Array(20 + Math.floor(Math.random() * 40)).fill(0)
-                            .map(() => String.fromCharCode(33 + Math.floor(Math.random() * 90))).join('').replace(/["\\]/g, '');
-                        junkCalls += `${vJunkObj}.${vJunkName}("${junkStr}"); `;
-                    }
-
-                    let hardFlowJunk = "";
-                    const flowCount = Math.max(1, Math.floor(code.length / 100)); 
-                    for (let f = 0; f < flowCount; f++) {
-                        hardFlowJunk += ` if ${vM}.random() > 100 then local t,k,r,j,l=0,0,0,0,0; local n,e,d,a={}; if t<1 then n[e[l]]=n[e[j]];r=r+1;e=d[r]; elseif 2==t then n[e[l]]={};r=r+1;e=d[r]; else k=e[l];n[k]=n[k](n[k+1]);r=r+1;e=d[r]; end if 56>k then if k<=49 then if k>=47 then if k>=48 then if k>47 then repeat if 49~=k then a[e[j]]=n[e[l]];break;end;n[e[l]]=n[e[j]]+n[e[t]];until true; else a[e[j]]=n[e[l]];end else local r=e[l];local l=n[e[j]];n[r+1]=l;n[r]=l[e[t]];end elseif 45==k then n[e[l]]=a[e[j]];else n[e[l]]=n[e[j]][n[e[t]]];end elseif k<=52 then if 51>k then if(n[e[l]]<e[t])then r=r+1;else r=e[j];end; elseif k>48 then repeat if k<52 then n[e[l]]=n[e[j]][e[t]];break;end;if(n[e[l]]<=n[e[t]])then r=e[j];else r=r+1;end;until true; else if(n[e[l]]<=n[e[t]])then r=e[j];else r=r+1;end;end end elseif k<54 then n[e[l]][n[e[j]]]=n[e[t]]; elseif 52<=k then for d=36,61 do if 54~=k then if(n[e[l]]~=e[t])then r=r+1;else r=e[j];end;break;end end end end `;
-                    }
-
-                    finalLoader = `local ${vG}=getfenv();local ${vS}=string;local ${vM}=math;local ${vChar}=${vS}.char;local ${vW}=${startW};local ${vByteTable}=${smartTableStr};local ${vJunkObj}={};${vJunkObj}.${vJunkName}=function(n)return n end;${hardFlowJunk}local function ${vDecFunc}(${vC})local ${vO}="";local ${vK}=0;local ${vD}=0;for ${vI}=1,#${vC} do local ${vE}=${vC}[${vI}];local ${vT};if((${vW}%0x8e2)<0x471)then ${vT}=${vE} else ${vT}=${vE}+1 end;if((${vW}%0x44ce)<0x2267)then local r={};r[${vE}]=0x1 end;local _tg=${vT};if((${vW}%0x3)==0)then _tg=_tg+0x0;else _tg=_tg*1;end;${vO}=${vO}..${vChar}(${vM}.floor((_tg+0x226)-0x226));${vW}=${vW}+1;local _junk="0US1mpi5MAZuw0vyMbVUE[?5tAi4&Ux(Ip)ADHY#'P,PLMV_X:";if(((${vW}+0x00)+${vD})%0x100==0)then ${vD}=${vK}+${vD};${vJunkObj}.${vJunkName}(_junk)end end;return ${vO} end;${junkCalls}if(${vM}.abs(1)==1)then ${vG}.loadstring(${vDecFunc}(${vByteTable}))()end`.replace(/[\n\r]+/g, ' ').replace(/\s+/g, ' ');
-                }
-                return { code: finalLoader, isUrl: isUrl };
-            },
-
-            downloadEncoded: (scriptId) => {
-                const data = scriptsData[scriptId];
-                if (!data) return;
-                
-                const result = window.app.getObfuscatedCode(scriptId);
-                if (!result) return;
-
-                const finalLoader = result.code;
-                const type = result.isUrl ? "Lua URL Loader" : "Lua Source Loader";
-                const icon = "lock";
-
-                const container = document.getElementById('loaders-container');
-                const placeholder = document.getElementById('loaders-placeholder');
-                if (placeholder) placeholder.remove();
-
-                const newId = Date.now();
-                const html = `
-                <div class="p-1 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 shadow-2xl fade-in">
-                    <div class="bg-eclipse-900 rounded-xl overflow-hidden">
-                        <div class="flex items-center justify-between px-4 py-3 bg-eclipse-800 border-b border-eclipse-600">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-purple-400">${icon}</span>
-                                <span class="text-sm font-medium text-white">${type}: ${data.name}</span>
-                            </div>
-                            <button id="copy-btn-${newId}" onclick="window.app.copyLoader(${newId})" class="flex items-center gap-2 px-3 py-1.5 bg-eclipse-700 hover:bg-blue-600 text-gray-300 hover:text-white rounded text-xs font-medium transition-all group">
-                                <span class="material-symbols-outlined text-[16px]">content_copy</span>
-                                Copy Code
-                            </button>
-                        </div>
-                        <div class="relative">
-                            <textarea id="loader-code-${newId}" class="w-full h-32 bg-eclipse-900 text-gray-300 font-mono text-xs p-4 focus:outline-none resize-none" readonly spellcheck="false">${finalLoader}</textarea>
-                        </div>
-                    </div>
-                </div>
-                `;
-                
-                container.insertAdjacentHTML('afterbegin', html);
-                window.app.openTab('loaders');
-            },
-
-            // --- GENERATE LINK FUNCTION ---
-            generateLink: (scriptId) => {
-                const data = scriptsData[scriptId];
-                if (!data) return;
-
-                let rawContent = "Empty.";
-
-                // LOGIC: Check if the script is active via the toggle
-                // If active, generate the obfuscated code.
-                // If inactive, keep rawContent as "Empty."
-                if (data.active) {
-                    const result = window.app.getObfuscatedCode(scriptId);
-                    if (result) {
-                        rawContent = result.code;
-                    }
-                }
-
-                // Encode Title to Hex
-                let hexTitle = '';
-                for (let i = 0; i < data.name.length; i++) {
-                    hexTitle += data.name.charCodeAt(i).toString(16);
-                }
-
-                // Construct Redirect URL
-                const baseUrl = window.location.origin + window.location.pathname;
-                const redirectUrl = `${baseUrl}?id=${hexTitle}&raw=${encodeURIComponent(rawContent)}`;
-                
-                // Redirect
-                window.location.href = redirectUrl;
-            }
+    <script>
+        // State Management
+        let appData = {
+            userId: null,
+            scripts: []
         };
 
-        window.app.openTab('scripts');
-        
-        document.getElementById('script-name').addEventListener('blur', (e) => {
-            const val = e.target.value.trim();
-            if (val && !val.toLowerCase().endsWith('.lua')) {
-                e.target.value = val + '.lua';
-            }
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderAll();
         });
 
-        // Auth already initiated by raw view check logic
+        function loadData() {
+            // Load User ID or generate new
+            const savedUserId = localStorage.getItem('valkyrie_userid_gmail');
+            if (savedUserId) {
+                appData.userId = savedUserId;
+            } else {
+                const randomNum = Math.floor(Math.random() * 900000 + 100000);
+                appData.userId = `user${randomNum}@gmail.com`;
+                localStorage.setItem('valkyrie_userid_gmail', appData.userId);
+            }
+            document.getElementById('user-id-display').textContent = appData.userId;
+
+            // Load Scripts
+            const savedScripts = localStorage.getItem('valkyrie_scripts_' + appData.userId);
+            if (savedScripts) {
+                appData.scripts = JSON.parse(savedScripts);
+            }
+        }
+
+        function saveData() {
+            if (appData.userId) {
+                localStorage.setItem('valkyrie_scripts_' + appData.userId, JSON.stringify(appData.scripts));
+            }
+        }
+
+        function switchTab(tabName) {
+            // Hide all contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show specific content
+            const selectedContent = document.getElementById('content-' + tabName);
+            if (selectedContent) {
+                selectedContent.classList.remove('hidden');
+            }
+
+            // Update button styles
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.remove('border-l-4');
+                btn.classList.remove('border-blue-500');
+                btn.classList.add('text-gray-400');
+                btn.classList.remove('text-white');
+            });
+
+            // Activate specific button
+            const selectedBtn = document.getElementById('tab-' + tabName);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+                selectedBtn.classList.remove('text-gray-400');
+            }
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('new-script-modal');
+            const input = document.getElementById('script-name-input');
+            if (show) {
+                modal.classList.remove('hidden');
+                // Auto focus input when opening
+                setTimeout(() => input.focus(), 100); 
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function generateRandomId(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function submitScript() {
+            const nameInput = document.getElementById('script-name-input');
+            const name = nameInput.value.trim() || "Untitled Configuration";
+            
+            // Create data object
+            const newScript = {
+                id: 'script-' + Date.now(),
+                name: name,
+                active: false,
+                rawId: generateRandomId(58)
+            };
+
+            // Update State
+            appData.scripts.push(newScript);
+            saveData();
+            
+            // Render UI
+            renderScriptItem(newScript);
+            renderLoaderItem(newScript);
+            
+            // Clear and close
+            nameInput.value = '';
+            toggleModal(false);
+            
+            // Update Empty State
+            document.getElementById('empty-loaders-msg').style.display = 'none';
+        }
+
+        function renderAll() {
+            const scriptsList = document.getElementById('scripts-list');
+            const loadersList = document.getElementById('loaders-list');
+            
+            scriptsList.innerHTML = '';
+            loadersList.innerHTML = '';
+
+            appData.scripts.forEach(script => {
+                renderScriptItem(script);
+                renderLoaderItem(script);
+            });
+
+            if (appData.scripts.length > 0) {
+                document.getElementById('empty-loaders-msg').style.display = 'none';
+            }
+        }
+
+        function renderScriptItem(script) {
+            const list = document.getElementById('scripts-list');
+            const item = document.createElement('div');
+            item.className = 'bg-black/30 border border-white/5 p-3 rounded-lg flex items-center justify-between group hover:border-blue-500/30 transition-all animate-fade-in';
+            
+            const statusClass = script.active 
+                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
+                : 'bg-gray-700/50 text-gray-400 border-gray-600/30';
+            const statusText = script.active ? 'Active' : 'Inactive';
+            const checkedAttr = script.active ? 'checked' : '';
+
+            // Using script.rawId for the loader copy in the list as well
+            const loaderString = `loadstring(game:HttpGet("https://valkyrie.rbx/raw/${script.rawId}"))()`;
+
+            item.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <h4 class="text-sm font-bold text-white tracking-wide">${script.name}</h4>
+                        <div class="flex items-center gap-2 mt-1">
+                             <span id="status-${script.id}" class="text-[10px] ${statusClass} px-2 py-0.5 rounded border transition-colors">${statusText}</span>
+                             <span class="text-[10px] text-gray-600">• Lua</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-5">
+                     <!-- Toggle Knob -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" ${checkedAttr} class="sr-only peer" onchange="toggleScript('${script.id}')">
+                        <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
+                    </label>
+
+                    <div class="w-px h-6 bg-white/10"></div>
+
+                    <!-- Copy Loader -->
+                    <button onclick="copyToClipboard('${loaderString.replace(/"/g, "&quot;")}')" class="text-gray-400 hover:text-blue-400 transition-colors tooltip-btn" title="Copy Loader">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+
+                    <!-- Download Source (Obfuscated) -->
+                    <button onclick="downloadScript('${script.name}')" class="text-gray-400 hover:text-white transition-colors tooltip-btn" title="Download Source">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(item);
+        }
+
+        function renderLoaderItem(script) {
+            const list = document.getElementById('loaders-list');
+            const loaderString = `loadstring(game:HttpGet("https://valkyrie.rbx/raw/${script.rawId}"))()`;
+            
+            const loaderItem = document.createElement('div');
+            loaderItem.className = 'bg-black/30 border border-white/5 p-4 rounded-lg animate-fade-in hover:bg-black/40 transition-colors';
+            loaderItem.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-brands fa-google text-gray-500"></i> ${script.name}
+                    </h4>
+                    <span class="text-[10px] text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-mono">RAW</span>
+                </div>
+                <div class="bg-black/50 rounded border border-white/10 p-2 flex items-center justify-between group relative">
+                    <code class="text-[10px] text-gray-400 font-mono truncate mr-4 select-all w-full">${loaderString}</code>
+                    <button onclick="copyToClipboard('${loaderString.replace(/"/g, "&quot;")}')" class="text-gray-500 hover:text-white transition-colors shrink-0 p-1">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(loaderItem);
+        }
+
+        function toggleScript(id) {
+            const script = appData.scripts.find(s => s.id === id);
+            if (script) {
+                script.active = !script.active;
+                saveData();
+                
+                // Update specific status badge directly to avoid full re-render flickering
+                const statusBadge = document.getElementById('status-' + id);
+                if (script.active) {
+                    statusBadge.textContent = 'Active';
+                    statusBadge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)] px-2 py-0.5 rounded transition-colors';
+                } else {
+                    statusBadge.textContent = 'Inactive';
+                    statusBadge.className = 'text-[10px] bg-gray-700/50 text-gray-400 border border-gray-600/30 px-2 py-0.5 rounded transition-colors';
+                }
+            }
+        }
+
+        function downloadScript(name) {
+            // Feature: Hide real source and replace with "You cant look"
+            const hiddenContent = "-- You cant look\n-- Source is protected by Valkyrie.rbx";
+            
+            const blob = new Blob([hiddenContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = name + '.lua';
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        function copyToClipboard(text) {
+             const textArea = document.createElement("textarea");
+             textArea.value = text;
+             document.body.appendChild(textArea);
+             textArea.select();
+             try {
+                document.execCommand('copy');
+             } catch (err) {
+                console.error('Unable to copy', err);
+             }
+             document.body.removeChild(textArea);
+        }
     </script>
 </body>
-              </html>
+</html>
