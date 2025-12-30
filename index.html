@@ -138,7 +138,7 @@
                     </button>
 
                     <div class="hidden md:flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
-                        <span>v2.8.0</span>
+                        <span>v2.8.1</span>
                     </div>
                 </div>
             </div>
@@ -242,7 +242,7 @@
             </div>
         </div>
 
-        <!-- Deploy Guide Modal (New) -->
+        <!-- Deploy Guide Modal -->
         <div id="deploy-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeDeployGuide()"></div>
             <div class="glass-modal w-full max-w-2xl p-0 rounded-2xl relative shadow-2xl transform scale-95 opacity-0 transition-all duration-300 overflow-hidden flex flex-col max-h-[90vh]" id="deploy-modal-content">
@@ -325,16 +325,14 @@
 
     <script>
         // --- Persistence Layer ---
-        // Changed Key to force reset of any old UID style keys
         const STORAGE_KEY_USER = 'akiru_github_username'; 
         const STORAGE_KEY_SCRIPTS = 'akiru_scripts';
         
-        // Default to the requested user if no storage exists
         const DEFAULT_USER = 'deeoxysaki';
         
         let githubUser = '';
         let scripts = [];
-        let currentDeployId = null; // Track which script is being deployed
+        let currentDeployId = null; 
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
@@ -346,7 +344,7 @@
             // 1. Handle User ID (GitHub Username)
             githubUser = localStorage.getItem(STORAGE_KEY_USER);
             
-            // Basic sanity check to ensure it's not a generated UID (starting with "UID-")
+            // Check for empty or generated UID patterns
             if (!githubUser || githubUser.startsWith('UID-') || githubUser.startsWith('uid')) {
                 githubUser = DEFAULT_USER;
                 localStorage.setItem(STORAGE_KEY_USER, githubUser);
@@ -358,6 +356,27 @@
             if (savedScripts) {
                 try {
                     scripts = JSON.parse(savedScripts);
+                    
+                    // --- AUTO-FIX LEGACY SCRIPTS ---
+                    // This block fixes existing scripts that might have the old UID link
+                    let needsSave = false;
+                    scripts.forEach(script => {
+                        // Regex to find links starting with uid...github.io
+                        if (script.rawLink && script.rawLink.match(/https:\/\/uid[a-z0-9]+\.github\.io/)) {
+                            // Replace the domain part with the current githubUser
+                            const newLink = script.rawLink.replace(/https:\/\/uid[a-z0-9]+\.github\.io/, `https://${githubUser}.github.io`);
+                            script.rawLink = newLink;
+                            script.loader = `loadstring(game:HttpGet('${newLink}'))()`;
+                            needsSave = true;
+                        }
+                    });
+                    
+                    if (needsSave) {
+                        saveToStorage();
+                        console.log('Fixed legacy script links.');
+                    }
+                    // --------------------------------
+
                     renderScripts();
                 } catch (e) {
                     console.error('Failed to parse scripts:', e);
@@ -371,10 +390,9 @@
             const avatarEl = document.getElementById('user-avatar');
             
             displayEl.textContent = githubUser;
-            // Use GitHub's public avatar URL
             avatarEl.src = `https://github.com/${githubUser}.png`;
             avatarEl.onerror = function() {
-                this.src = 'https://github.com/github.png'; // Fallback
+                this.src = 'https://github.com/github.png'; 
             };
         }
 
@@ -385,11 +403,9 @@
                 localStorage.setItem(STORAGE_KEY_USER, githubUser);
                 updateUserDisplay();
                 
-                // Warn about needing to recreate scripts if name changed
                 if(scripts.length > 0) {
                      if(confirm("Username changed. Do you want to update existing script links to match the new username?")) {
                          scripts.forEach(s => {
-                            // Extract filename from old link or regenerate
                             const safeName = s.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
                             s.rawLink = `https://${githubUser}.github.io/akiru-scripts/raw/${safeName}.lua`;
                             s.loader = `loadstring(game:HttpGet('${s.rawLink}'))()`;
@@ -422,14 +438,11 @@
 
         // --- UI Logic ---
 
-        // Tab Switching
         function switchTab(tabName) {
             const tabs = ['scripts', 'loaders'];
-            
             tabs.forEach(t => {
                 const button = document.getElementById(`tab-${t}`);
                 const content = document.getElementById(`content-${t}`);
-                
                 if (t === tabName) {
                     button.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-white/5', 'border-transparent');
                     button.classList.add('bg-eclipse-purple/20', 'text-white', 'border-eclipse-purple/50', 'shadow-glow');
@@ -442,7 +455,6 @@
             });
         }
 
-        // Modal Functions
         function openModal() {
             const modal = document.getElementById('create-modal');
             const content = document.getElementById('modal-content');
@@ -456,17 +468,14 @@
         function closeModal() {
             const modal = document.getElementById('create-modal');
             const content = document.getElementById('modal-content');
-            
             content.classList.remove('scale-100', 'opacity-100');
             content.classList.add('scale-95', 'opacity-0');
-            
             setTimeout(() => {
                 modal.classList.add('hidden');
                 document.getElementById('create-script-form').reset();
             }, 300);
         }
 
-        // Deploy Modal Functions
         function openDeployGuide(id) {
             currentDeployId = id;
             const script = scripts.find(s => s.id === id);
@@ -478,11 +487,9 @@
             const warningBox = document.getElementById('deploy-user-warning');
             const warnUid = document.getElementById('warn-uid');
 
-            // Set Path
             const safeName = script.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
             pathDisplay.textContent = `akiru-scripts/raw/${safeName}.lua`;
 
-            // Check if User ID looks generated (UID-...)
             if (githubUser.startsWith('UID-') || githubUser.startsWith('uid')) {
                 warningBox.classList.remove('hidden');
                 warnUid.textContent = githubUser;
@@ -501,15 +508,12 @@
             const modal = document.getElementById('deploy-modal');
             const content = document.getElementById('deploy-modal-content');
             currentDeployId = null;
-
             content.classList.remove('scale-100', 'opacity-100');
             content.classList.add('scale-95', 'opacity-0');
-            
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 300);
         }
-
 
         // Create Script Logic
         function handleCreateScript(e) {
@@ -523,22 +527,24 @@
 
             if (!file) return;
 
-            // Use FileReader to get the actual text content of the uploaded script
             const reader = new FileReader();
             
             reader.onload = function(event) {
                 const fileContent = event.target.result;
-                
                 const now = new Date();
                 const dateString = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                
-                // Generate Safe ID and Name
                 const scriptId = Date.now();
                 const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 
-                // Create GitHub Pages Style Link using the current githubUser
-                const rawLink = `https://${githubUser}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                // --- SAFEGUARD ---
+                // Ensure we use 'deeoxysaki' if the current user still looks like a UID
+                let effectiveUser = githubUser;
+                if (!effectiveUser || effectiveUser.startsWith('uid') || effectiveUser.startsWith('UID')) {
+                    effectiveUser = 'deeoxysaki';
+                }
+                
+                const rawLink = `https://${effectiveUser}.github.io/akiru-scripts/raw/${safeName}.lua`;
                 const loaderString = `loadstring(game:HttpGet('${rawLink}'))()`;
 
                 const newScript = {
@@ -547,18 +553,17 @@
                     fileName: file.name,
                     date: `${dateString} at ${timeString}`,
                     loader: loaderString,
-                    rawLink: rawLink, // Store the simulated link
-                    content: fileContent, // Store the actual file source
+                    rawLink: rawLink,
+                    content: fileContent,
                     enabled: true
                 };
 
                 scripts.unshift(newScript);
-                saveToStorage(); // Save persistence
+                saveToStorage(); 
                 renderScripts();
                 closeModal();
                 showToast(`Created script "${name}"`, 'success');
                 
-                // Prompt deployment
                 setTimeout(() => openDeployGuide(scriptId), 500);
             };
 
@@ -566,7 +571,6 @@
                 showToast('Error reading file', 'error');
             };
 
-            // Read the file as text
             reader.readAsText(file);
         }
 
@@ -574,7 +578,7 @@
             const script = scripts.find(s => s.id === id);
             if (script) {
                 script.enabled = !script.enabled;
-                saveToStorage(); // Save persistence
+                saveToStorage(); 
                 renderScripts(); 
                 showToast(`Script ${script.enabled ? 'Enabled' : 'Disabled'}`, script.enabled ? 'success' : 'default');
             }
@@ -585,14 +589,13 @@
                 const index = scripts.findIndex(s => s.id === id);
                 if (index !== -1) {
                     scripts.splice(index, 1);
-                    saveToStorage(); // Save persistence
+                    saveToStorage(); 
                     renderScripts();
                     showToast('Script deleted', 'default');
                 }
             }
         }
 
-        // Logic to simulate "Downloading Raw Page"
         function downloadRaw(id) {
             const script = scripts.find(s => s.id === id);
             if (script) {
@@ -600,11 +603,9 @@
                 let filename = "";
 
                 if (script.enabled) {
-                    // Enabled: Serve original source code
                     contentToDownload = script.content;
                     filename = `${script.name.replace(/\s+/g, '_')}_raw.lua`;
                 } else {
-                    // Disabled: Serve Kick Script
                     contentToDownload = `game:GetService("Players").LocalPlayer:Kick("This Script ${script.id} dont exist or is disabled")`;
                     filename = `${script.name.replace(/\s+/g, '_')}_disabled.lua`;
                 }
@@ -620,14 +621,12 @@
                 window.URL.revokeObjectURL(url);
                 
                 if(!document.getElementById('deploy-modal').classList.contains('hidden')) {
-                     // don't show toast if inside modal to avoid clutter
                 } else {
                     showToast(script.enabled ? 'Opening Raw Source...' : 'Script is Disabled (Kick Logic)', script.enabled ? 'success' : 'error');
                 }
             }
         }
 
-        // Render Loop
         function renderScripts() {
             const container = document.getElementById('script-container');
             const emptyState = document.getElementById('empty-state');
@@ -649,7 +648,6 @@
                 
                 card.innerHTML = `
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <!-- Left Info -->
                         <div class="flex items-start gap-4">
                             <div class="p-3 rounded-lg ${script.enabled ? 'bg-eclipse-purple/10 text-eclipse-purple' : 'bg-gray-800 text-gray-500'} transition-colors">
                                 <i data-lucide="${script.enabled ? 'zap' : 'power-off'}" class="w-6 h-6"></i>
@@ -663,10 +661,7 @@
                             </div>
                         </div>
 
-                        <!-- Right Actions -->
                         <div class="flex items-center gap-3 md:pl-4 md:border-l md:border-eclipse-border/50">
-                            
-                            <!-- Toggle -->
                             <div class="flex items-center mr-2">
                                 <label for="toggle-${script.id}" class="flex items-center cursor-pointer relative" title="Enable/Disable Raw Access">
                                     <div class="relative">
@@ -678,7 +673,6 @@
                                 </label>
                             </div>
 
-                            <!-- Action Buttons -->
                             <div class="flex gap-2">
                                 <button onclick="openDeployGuide(${script.id})" class="p-2 bg-eclipse-surface hover:bg-eclipse-purple text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors shadow-glow-hover" title="Deploy / Fix 404">
                                     <i data-lucide="rocket" class="w-4 h-4"></i>
@@ -702,7 +696,6 @@
             lucide.createIcons();
         }
 
-        // Clipboard Functionality
         function copyToClipboard(text) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
@@ -725,7 +718,6 @@
             }
         }
 
-        // Toast Notification System
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
