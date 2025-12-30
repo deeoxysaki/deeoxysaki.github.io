@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akiru Script Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        eclipse: {
+                            black: '#050505',
+                            dark: '#0a0a0a',
+                            surface: '#121212',
+                            border: '#2a2a2a',
+                            purple: '#8b5cf6',
+                            purpleGlow: '#7c3aed',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px -5px rgba(139, 92, 246, 0.3)',
+                        'glow-lg': '0 0 40px -10px rgba(124, 58, 237, 0.4)',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a2a; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6; 
+        }
+
+        /* Glassmorphism utilities */
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .glass-modal {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        /* Eclipse Gradient Background */
+        .bg-eclipse {
+            background-color: #050505;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(58, 20, 95, 0.4) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(46, 16, 101, 0.2) 0%, transparent 40%);
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #8b5cf6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #8b5cf6;
+        }
+        
+        /* File Input Styling */
+        input[type="file"]::file-selector-button {
+            background-color: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: rgba(139, 92, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-eclipse text-gray-300 font-sans min-h-screen selection:bg-eclipse-purple selection:text-white overflow-x-hidden">
+
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto px-6 py-12 relative z-10">
+        
+        <!-- Header Section -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <!-- Title: Akiru -->
+                <h1 class="text-5xl font-extrabold tracking-tighter text-white">
+                    A<span class="text-eclipse-purple drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]">k</span>iru
+                </h1>
+                
+                <!-- User Info & Status -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center space-x-2 bg-eclipse-surface/80 border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400 backdrop-blur-sm shadow-sm" title="Your User ID">
+                        <i data-lucide="user" class="w-3 h-3 text-eclipse-purple"></i>
+                        <span id="user-id-display" class="text-gray-300 select-all">Loading...</span>
+                    </div>
+
+                    <div class="flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
+                        <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span>v2.6.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horizontal Divider with Gradient -->
+            <div class="h-[1px] w-full bg-gradient-to-r from-eclipse-purple/0 via-eclipse-purple/60 to-eclipse-purple/0 mt-6 mb-8 shadow-glow"></div>
+        </header>
+
+        <!-- Main Layout Container: Vertical Tabs + Content -->
+        <div class="flex flex-col md:flex-row gap-8">
+            
+            <!-- Vertical Tab Navigation -->
+            <aside class="w-full md:w-64 flex-shrink-0 flex flex-col gap-4">
+                <nav class="flex flex-col space-y-2 bg-eclipse-surface/50 p-2 rounded-lg border border-eclipse-border">
+                    <button onclick="switchTab('scripts')" id="tab-scripts" class="w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-all duration-300 bg-eclipse-purple/20 text-white border border-eclipse-purple/50 shadow-glow flex items-center">
+                        <i data-lucide="code-2" class="w-4 h-4 mr-3"></i>Scripts
+                    </button>
+                    <button onclick="switchTab('loaders')" id="tab-loaders" class="w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-all duration-300 text-gray-400 hover:text-white hover:bg-white/5 border border-transparent flex items-center">
+                        <i data-lucide="download-cloud" class="w-4 h-4 mr-3"></i>Loaders
+                    </button>
+                </nav>
+
+                <!-- Data Management -->
+                <div class="bg-eclipse-surface/30 p-4 rounded-lg border border-eclipse-border/50">
+                    <p class="text-xs text-gray-500 mb-3 font-mono">DATA MANAGEMENT</p>
+                    <button onclick="resetData()" class="w-full text-left px-3 py-2 rounded text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center border border-transparent hover:border-red-500/20">
+                        <i data-lucide="trash-2" class="w-3 h-3 mr-2"></i> Reset Local Data
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <main class="flex-1 relative min-h-[400px]">
+                
+                <!-- Scripts Tab Content -->
+                <div id="content-scripts" class="flex flex-col gap-6 transition-opacity duration-300">
+                    
+                    <!-- Action Bar -->
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-white">Your Scripts</h2>
+                        <button onclick="openModal()" class="group flex items-center px-5 py-2.5 bg-eclipse-purple hover:bg-eclipse-purpleGlow text-white rounded-lg transition-all shadow-glow hover:shadow-glow-lg font-medium">
+                            <i data-lucide="plus" class="w-4 h-4 mr-2 transition-transform group-hover:rotate-90"></i>
+                            Create Script
+                        </button>
+                    </div>
+
+                    <!-- Script Container (Dynamic) -->
+                    <div id="script-container" class="grid grid-cols-1 gap-4">
+                        <!-- Empty State (Initially Visible) -->
+                        <div id="empty-state" class="flex flex-col items-center justify-center p-12 border border-dashed border-eclipse-border rounded-xl bg-eclipse-surface/30">
+                            <div class="p-4 bg-eclipse-purple/10 rounded-full mb-4">
+                                <i data-lucide="ghost" class="w-8 h-8 text-eclipse-purple/50"></i>
+                            </div>
+                            <p class="text-gray-500 font-mono text-sm">No scripts found. Create one to get started.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Loaders Tab Content -->
+                <div id="content-loaders" class="hidden transition-opacity duration-300">
+                   <div class="flex flex-col items-center justify-center p-12 border border-dashed border-eclipse-border rounded-xl bg-eclipse-surface/30">
+                        <i data-lucide="server-off" class="w-8 h-8 text-gray-600 mb-4"></i>
+                        <p class="text-gray-500 font-mono text-sm">Loader configuration is empty.</p>
+                   </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="fixed bottom-6 right-6 z-50 pointer-events-none"></div>
+
+        <!-- Create Script Modal -->
+        <div id="create-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
+            
+            <!-- Modal Content -->
+            <div class="glass-modal w-full max-w-md p-6 rounded-2xl relative shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="modal-content">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                
+                <h3 class="text-xl font-bold text-white mb-1">New Script</h3>
+                <p class="text-sm text-gray-400 mb-6">Upload your Lua script to generate a loader.</p>
+                
+                <form id="create-script-form" onsubmit="handleCreateScript(event)">
+                    <!-- Name Input -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-mono text-gray-400 mb-2 uppercase tracking-wider">Script Name</label>
+                        <input type="text" id="script-name" required placeholder="e.g. Silent Aim V3" 
+                            class="w-full bg-eclipse-surface border border-eclipse-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-eclipse-purple focus:ring-1 focus:ring-eclipse-purple transition-all placeholder-gray-600">
+                    </div>
+
+                    <!-- File Input -->
+                    <div class="mb-6">
+                        <label class="block text-xs font-mono text-gray-400 mb-2 uppercase tracking-wider">Source File (.lua)</label>
+                        <div class="relative group">
+                            <input type="file" id="script-file" accept=".lua" required
+                                class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-eclipse-purple/10 file:text-eclipse-purple hover:file:bg-eclipse-purple/20 cursor-pointer border border-eclipse-border rounded-lg bg-eclipse-surface p-1">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-eclipse-purple hover:bg-eclipse-purpleGlow text-white font-bold py-3 rounded-lg shadow-glow transition-all transform active:scale-95 flex items-center justify-center">
+                        <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i>
+                        Create Loader
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Persistence Layer ---
+        const STORAGE_KEY_USER = 'akiru_user_id';
+        const STORAGE_KEY_SCRIPTS = 'akiru_scripts';
+        
+        let userId = '';
+        let scripts = [];
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initStorage();
+        });
+
+        function initStorage() {
+            // 1. Handle User ID
+            userId = localStorage.getItem(STORAGE_KEY_USER);
+            if (!userId) {
+                // Generate simple unique ID
+                userId = 'UID-' + Math.random().toString(36).substr(2, 6).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                localStorage.setItem(STORAGE_KEY_USER, userId);
+            }
+            document.getElementById('user-id-display').textContent = userId;
+
+            // 2. Handle Scripts
+            const savedScripts = localStorage.getItem(STORAGE_KEY_SCRIPTS);
+            if (savedScripts) {
+                try {
+                    scripts = JSON.parse(savedScripts);
+                    renderScripts();
+                } catch (e) {
+                    console.error('Failed to parse scripts:', e);
+                    scripts = [];
+                }
+            }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_SCRIPTS, JSON.stringify(scripts));
+            } catch (e) {
+                showToast('Failed to save data! (Quota Exceeded?)', 'error');
+            }
+        }
+
+        function resetData() {
+            if (confirm('Are you sure you want to reset all local data? This cannot be undone.')) {
+                localStorage.removeItem(STORAGE_KEY_USER);
+                localStorage.removeItem(STORAGE_KEY_SCRIPTS);
+                location.reload();
+            }
+        }
+
+        // --- UI Logic ---
+
+        // Tab Switching
+        function switchTab(tabName) {
+            const tabs = ['scripts', 'loaders'];
+            
+            tabs.forEach(t => {
+                const button = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                
+                if (t === tabName) {
+                    button.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-white/5', 'border-transparent');
+                    button.classList.add('bg-eclipse-purple/20', 'text-white', 'border-eclipse-purple/50', 'shadow-glow');
+                    content.classList.remove('hidden');
+                } else {
+                    button.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-white/5', 'border-transparent');
+                    button.classList.remove('bg-eclipse-purple/20', 'text-white', 'border-eclipse-purple/50', 'shadow-glow');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Modal Functions
+        function openModal() {
+            const modal = document.getElementById('create-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('create-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('create-script-form').reset();
+            }, 300);
+        }
+
+        // Create Script Logic
+        function handleCreateScript(e) {
+            e.preventDefault();
+            
+            const nameInput = document.getElementById('script-name');
+            const fileInput = document.getElementById('script-file');
+            
+            const name = nameInput.value;
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            // Use FileReader to get the actual text content of the uploaded script
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const fileContent = event.target.result;
+                
+                const now = new Date();
+                const dateString = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                
+                // Generate Safe ID and Name
+                const scriptId = Date.now();
+                const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                // Format User ID as a subdomain-like string
+                const safeUserId = userId.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                // Create GitHub Pages Style Link
+                const rawLink = `https://${safeUserId}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                const loaderString = `loadstring(game:HttpGet('${rawLink}'))()`;
+
+                const newScript = {
+                    id: scriptId,
+                    name: name,
+                    fileName: file.name,
+                    date: `${dateString} at ${timeString}`,
+                    loader: loaderString,
+                    rawLink: rawLink, // Store the simulated link
+                    content: fileContent, // Store the actual file source
+                    enabled: true
+                };
+
+                scripts.unshift(newScript);
+                saveToStorage(); // Save persistence
+                renderScripts();
+                closeModal();
+                showToast(`Created script "${name}"`, 'success');
+            };
+
+            reader.onerror = function() {
+                showToast('Error reading file', 'error');
+            };
+
+            // Read the file as text
+            reader.readAsText(file);
+        }
+
+        function toggleScript(id) {
+            const script = scripts.find(s => s.id === id);
+            if (script) {
+                script.enabled = !script.enabled;
+                saveToStorage(); // Save persistence
+                renderScripts(); 
+                showToast(`Script ${script.enabled ? 'Enabled' : 'Disabled'}`, script.enabled ? 'success' : 'default');
+            }
+        }
+
+        function deleteScript(id) {
+            if (confirm('Delete this script configuration?')) {
+                const index = scripts.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    scripts.splice(index, 1);
+                    saveToStorage(); // Save persistence
+                    renderScripts();
+                    showToast('Script deleted', 'default');
+                }
+            }
+        }
+
+        // Logic to simulate "Downloading Raw Page"
+        function downloadRaw(id) {
+            const script = scripts.find(s => s.id === id);
+            if (script) {
+                let contentToDownload = "";
+                let filename = "";
+
+                if (script.enabled) {
+                    // Enabled: Serve original source code
+                    contentToDownload = script.content;
+                    filename = `${script.name.replace(/\s+/g, '_')}_raw.lua`;
+                } else {
+                    // Disabled: Serve Kick Script
+                    contentToDownload = `game:GetService("Players").LocalPlayer:Kick("This Script ${script.id} dont exist or is disabled")`;
+                    filename = `${script.name.replace(/\s+/g, '_')}_disabled.lua`;
+                }
+
+                const blob = new Blob([contentToDownload], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showToast(script.enabled ? 'Opening Raw Source...' : 'Script is Disabled (Kick Logic)', script.enabled ? 'success' : 'error');
+            }
+        }
+
+        // Render Loop
+        function renderScripts() {
+            const container = document.getElementById('script-container');
+            const emptyState = document.getElementById('empty-state');
+
+            if (scripts.length === 0) {
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                emptyState.style.display = 'flex';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = ''; 
+            container.appendChild(emptyState);
+
+            scripts.forEach(script => {
+                const card = document.createElement('div');
+                card.className = `glass-panel p-5 rounded-xl border-l-4 transition-all duration-300 animate-fade-in group hover:shadow-glow hover:-translate-y-1 ${script.enabled ? 'border-l-eclipse-purple' : 'border-l-gray-600 opacity-75'}`;
+                
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <!-- Left Info -->
+                        <div class="flex items-start gap-4">
+                            <div class="p-3 rounded-lg ${script.enabled ? 'bg-eclipse-purple/10 text-eclipse-purple' : 'bg-gray-800 text-gray-500'} transition-colors">
+                                <i data-lucide="${script.enabled ? 'zap' : 'power-off'}" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white leading-tight mb-1">${script.name}</h3>
+                                <div class="flex items-center gap-3 text-xs text-gray-500 font-mono">
+                                    <span class="flex items-center"><i data-lucide="calendar" class="w-3 h-3 mr-1"></i> ${script.date}</span>
+                                    <span class="bg-eclipse-surface px-1.5 py-0.5 rounded border border-eclipse-border">${script.fileName}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Actions -->
+                        <div class="flex items-center gap-3 md:pl-4 md:border-l md:border-eclipse-border/50">
+                            
+                            <!-- Toggle -->
+                            <div class="flex items-center mr-2">
+                                <label for="toggle-${script.id}" class="flex items-center cursor-pointer relative" title="Enable/Disable Raw Access">
+                                    <div class="relative">
+                                        <input type="checkbox" id="toggle-${script.id}" class="sr-only" ${script.enabled ? 'checked' : ''} onchange="toggleScript(${script.id})">
+                                        <div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner transition-colors ${script.enabled ? 'bg-eclipse-purple/50' : ''}"></div>
+                                        <div class="dot absolute w-4 h-4 bg-white rounded-full shadow left-1 top-1 transition transition-transform duration-300 ${script.enabled ? 'translate-x-full bg-eclipse-purple' : ''}"></div>
+                                    </div>
+                                    <span class="ml-2 text-xs font-mono uppercase text-gray-500">${script.enabled ? 'ON' : 'OFF'}</span>
+                                </label>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                <button onclick="downloadRaw(${script.id})" class="p-2 bg-eclipse-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors" title="View Raw Page (Simulated)">
+                                    <i data-lucide="file-code" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="copyToClipboard('${script.loader.replace(/'/g, "\\'")}')" class="p-2 bg-eclipse-surface hover:bg-eclipse-purple text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors shadow-glow-hover" title="Copy Loader String">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteScript(${script.id})" class="p-2 bg-eclipse-surface hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg border border-eclipse-border transition-colors" title="Delete Script">
+                                    <i data-lucide="trash" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            lucide.createIcons();
+        }
+
+        // Clipboard Functionality
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Loader copied to clipboard!', 'success');
+                }).catch(err => {
+                    showToast('Failed to copy', 'error');
+                });
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Loader copied to clipboard!', 'success');
+                } catch (err) {
+                    showToast('Failed to copy', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            toast.className = `
+                mb-3 p-4 rounded-lg shadow-lg backdrop-blur-md border flex items-center gap-3 transform translate-y-10 opacity-0 transition-all duration-300
+                ${type === 'success' ? 'bg-black/80 border-green-500/50 text-green-400' : 
+                  type === 'error' ? 'bg-black/80 border-red-500/50 text-red-400' :
+                  'bg-black/80 border-gray-500/50 text-gray-300'}
+            `;
+            
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : 'info'}" class="w-5 h-5"></i>
+                <span class="font-medium text-sm text-white">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons({ root: toast });
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+  </html>
