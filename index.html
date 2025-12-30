@@ -125,17 +125,20 @@
                 
                 <!-- User Info & Status -->
                 <div class="flex items-center gap-3">
-                    <div class="flex items-center space-x-2 bg-eclipse-surface/80 border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400 backdrop-blur-sm shadow-sm" title="Your User ID">
-                        <i data-lucide="user" class="w-3 h-3 text-eclipse-purple"></i>
-                        <span id="user-id-display" class="text-gray-300 select-all">Loading...</span>
-                    </div>
+                    <!-- GitHub User Button -->
+                    <button onclick="editUsername()" class="group flex items-center space-x-3 bg-eclipse-surface/80 border border-eclipse-border pl-1 pr-4 py-1 rounded-full backdrop-blur-sm shadow-sm hover:border-eclipse-purple/50 hover:bg-eclipse-surface transition-all" title="Click to change GitHub User">
+                        <div class="relative">
+                            <img id="user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full border border-eclipse-border group-hover:border-eclipse-purple transition-colors bg-eclipse-dark">
+                            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-eclipse-surface rounded-full"></div>
+                        </div>
+                        <div class="flex flex-col items-start text-xs">
+                            <span class="text-gray-500 font-mono leading-none mb-0.5">USER</span>
+                            <span id="user-id-display" class="text-gray-200 font-bold font-mono leading-none group-hover:text-eclipse-purple transition-colors">deeoxysaki</span>
+                        </div>
+                    </button>
 
-                    <div class="flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
-                        <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                        <span>v2.6.0</span>
+                    <div class="hidden md:flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
+                        <span>v2.7.1</span>
                     </div>
                 </div>
             </div>
@@ -256,6 +259,9 @@
         const STORAGE_KEY_USER = 'akiru_user_id';
         const STORAGE_KEY_SCRIPTS = 'akiru_scripts';
         
+        // Default to the requested user if no storage exists
+        const DEFAULT_USER = 'deeoxysaki';
+        
         let userId = '';
         let scripts = [];
 
@@ -266,14 +272,13 @@
         });
 
         function initStorage() {
-            // 1. Handle User ID
+            // 1. Handle User ID (GitHub Username)
             userId = localStorage.getItem(STORAGE_KEY_USER);
             if (!userId) {
-                // Generate simple unique ID
-                userId = 'UID-' + Math.random().toString(36).substr(2, 6).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                userId = DEFAULT_USER;
                 localStorage.setItem(STORAGE_KEY_USER, userId);
             }
-            document.getElementById('user-id-display').textContent = userId;
+            updateUserDisplay();
 
             // 2. Handle Scripts
             const savedScripts = localStorage.getItem(STORAGE_KEY_SCRIPTS);
@@ -285,6 +290,28 @@
                     console.error('Failed to parse scripts:', e);
                     scripts = [];
                 }
+            }
+        }
+
+        function updateUserDisplay() {
+            const displayEl = document.getElementById('user-id-display');
+            const avatarEl = document.getElementById('user-avatar');
+            
+            displayEl.textContent = userId;
+            // Use GitHub's public avatar URL
+            avatarEl.src = `https://github.com/${userId}.png`;
+            avatarEl.onerror = function() {
+                this.src = 'https://github.com/github.png'; // Fallback
+            };
+        }
+
+        function editUsername() {
+            const newName = prompt("Enter GitHub Username:", userId);
+            if (newName && newName.trim() !== "") {
+                userId = newName.trim();
+                localStorage.setItem(STORAGE_KEY_USER, userId);
+                updateUserDisplay();
+                showToast(`User switched to ${userId}`, 'success');
             }
         }
 
@@ -375,11 +402,10 @@
                 // Generate Safe ID and Name
                 const scriptId = Date.now();
                 const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                // Format User ID as a subdomain-like string
-                const safeUserId = userId.toLowerCase().replace(/[^a-z0-9]/g, '');
                 
-                // Create GitHub Pages Style Link
-                const rawLink = `https://${safeUserId}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                // Create GitHub Pages Style Link using the current userId
+                // Example: https://deeoxysaki.github.io/akiru-scripts/raw/silent_aim.lua
+                const rawLink = `https://${userId}.github.io/akiru-scripts/raw/${safeName}.lua`;
                 const loaderString = `loadstring(game:HttpGet('${rawLink}'))()`;
 
                 const newScript = {
@@ -587,4 +613,4 @@
         }
     </script>
 </body>
-  </html>
+</html>
