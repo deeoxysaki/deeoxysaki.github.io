@@ -138,7 +138,7 @@
                     </button>
 
                     <div class="hidden md:flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
-                        <span>v2.7.1</span>
+                        <span>v2.7.3</span>
                     </div>
                 </div>
             </div>
@@ -214,27 +214,19 @@
 
         <!-- Create Script Modal -->
         <div id="create-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-            <!-- Backdrop -->
             <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
-            
-            <!-- Modal Content -->
             <div class="glass-modal w-full max-w-md p-6 rounded-2xl relative shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="modal-content">
                 <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
-                
                 <h3 class="text-xl font-bold text-white mb-1">New Script</h3>
                 <p class="text-sm text-gray-400 mb-6">Upload your Lua script to generate a loader.</p>
-                
                 <form id="create-script-form" onsubmit="handleCreateScript(event)">
-                    <!-- Name Input -->
                     <div class="mb-4">
                         <label class="block text-xs font-mono text-gray-400 mb-2 uppercase tracking-wider">Script Name</label>
                         <input type="text" id="script-name" required placeholder="e.g. Silent Aim V3" 
                             class="w-full bg-eclipse-surface border border-eclipse-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-eclipse-purple focus:ring-1 focus:ring-eclipse-purple transition-all placeholder-gray-600">
                     </div>
-
-                    <!-- File Input -->
                     <div class="mb-6">
                         <label class="block text-xs font-mono text-gray-400 mb-2 uppercase tracking-wider">Source File (.lua)</label>
                         <div class="relative group">
@@ -242,13 +234,90 @@
                                 class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-eclipse-purple/10 file:text-eclipse-purple hover:file:bg-eclipse-purple/20 cursor-pointer border border-eclipse-border rounded-lg bg-eclipse-surface p-1">
                         </div>
                     </div>
-
-                    <!-- Submit Button -->
                     <button type="submit" class="w-full bg-eclipse-purple hover:bg-eclipse-purpleGlow text-white font-bold py-3 rounded-lg shadow-glow transition-all transform active:scale-95 flex items-center justify-center">
                         <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i>
                         Create Loader
                     </button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Deploy Guide Modal (New) -->
+        <div id="deploy-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeDeployGuide()"></div>
+            <div class="glass-modal w-full max-w-2xl p-0 rounded-2xl relative shadow-2xl transform scale-95 opacity-0 transition-all duration-300 overflow-hidden flex flex-col max-h-[90vh]" id="deploy-modal-content">
+                <!-- Header -->
+                <div class="p-6 border-b border-eclipse-border bg-eclipse-surface/50 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="rocket" class="text-eclipse-purple"></i> Deployment Guide
+                        </h3>
+                        <p class="text-sm text-gray-400 mt-1">Fix the 404 Error by hosting your file.</p>
+                    </div>
+                    <button onclick="closeDeployGuide()" class="text-gray-500 hover:text-white transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-6 overflow-y-auto space-y-6">
+                    
+                    <!-- Step 0: User Warning -->
+                    <div id="deploy-user-warning" class="hidden bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="alert-triangle" class="text-red-400 w-5 h-5 mt-0.5"></i>
+                            <div>
+                                <h4 class="text-red-400 font-bold text-sm">Invalid Username Detected</h4>
+                                <p class="text-xs text-gray-300 mt-1">
+                                    You are using an auto-generated ID (<span id="warn-uid" class="font-mono bg-black/30 px-1 rounded"></span>). 
+                                    <br>GitHub Pages requires your <strong>exact GitHub username</strong>. 
+                                    <br><button onclick="editUsername(); closeDeployGuide();" class="mt-2 text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-xs">Update Username Now</button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1 -->
+                    <div class="flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-eclipse-surface border border-eclipse-border flex items-center justify-center flex-shrink-0 font-bold text-eclipse-purple">1</div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Create Repository</h4>
+                            <p class="text-sm text-gray-400 mb-2">Create a new public repository on GitHub named exactly:</p>
+                            <code class="block bg-black/50 border border-eclipse-border p-2 rounded text-sm font-mono text-green-400">akiru-scripts</code>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-eclipse-surface border border-eclipse-border flex items-center justify-center flex-shrink-0 font-bold text-eclipse-purple">2</div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Structure & Upload</h4>
+                            <p class="text-sm text-gray-400 mb-2">Create a folder named <code>raw</code> and upload your file. Ensure the path matches:</p>
+                            <code class="block bg-black/50 border border-eclipse-border p-2 rounded text-sm font-mono text-blue-400 break-all" id="deploy-path-display">
+                                akiru-scripts/raw/filename.lua
+                            </code>
+                            <div class="mt-2">
+                                <button onclick="downloadRaw(currentDeployId)" class="text-xs flex items-center gap-1 text-gray-300 hover:text-white border border-eclipse-border px-2 py-1 rounded bg-eclipse-surface hover:bg-eclipse-border transition-colors">
+                                    <i data-lucide="download" class="w-3 h-3"></i> Download File Again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="flex gap-4">
+                        <div class="w-8 h-8 rounded-full bg-eclipse-surface border border-eclipse-border flex items-center justify-center flex-shrink-0 font-bold text-eclipse-purple">3</div>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Enable GitHub Pages</h4>
+                            <p class="text-sm text-gray-400">
+                                Go to <strong>Settings > Pages</strong> in your repository.<br>
+                                Set "Source" to <code>Deploy from a branch</code>.<br>
+                                Set "Branch" to <code>main</code> (or master) and folder to <code>/ (root)</code>.<br>
+                                Click <strong>Save</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -264,6 +333,7 @@
         
         let userId = '';
         let scripts = [];
+        let currentDeployId = null; // Track which script is being deployed
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
@@ -311,7 +381,23 @@
                 userId = newName.trim();
                 localStorage.setItem(STORAGE_KEY_USER, userId);
                 updateUserDisplay();
-                showToast(`User switched to ${userId}`, 'success');
+                
+                // Warn about needing to recreate scripts if name changed
+                if(scripts.length > 0) {
+                     if(confirm("Username changed. Do you want to update existing script links to match the new username?")) {
+                         scripts.forEach(s => {
+                            // Extract filename from old link or regenerate
+                            const safeName = s.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                            s.rawLink = `https://${userId}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                            s.loader = `loadstring(game:HttpGet('${s.rawLink}'))()`;
+                         });
+                         saveToStorage();
+                         renderScripts();
+                         showToast('Links updated to new username', 'success');
+                     }
+                } else {
+                    showToast(`User switched to ${userId}`, 'success');
+                }
             }
         }
 
@@ -377,6 +463,51 @@
             }, 300);
         }
 
+        // Deploy Modal Functions
+        function openDeployGuide(id) {
+            currentDeployId = id;
+            const script = scripts.find(s => s.id === id);
+            if(!script) return;
+
+            const modal = document.getElementById('deploy-modal');
+            const content = document.getElementById('deploy-modal-content');
+            const pathDisplay = document.getElementById('deploy-path-display');
+            const warningBox = document.getElementById('deploy-user-warning');
+            const warnUid = document.getElementById('warn-uid');
+
+            // Set Path
+            const safeName = script.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            pathDisplay.textContent = `akiru-scripts/raw/${safeName}.lua`;
+
+            // Check if User ID looks generated (UID-...)
+            if (userId.startsWith('UID-') || userId.startsWith('uid')) {
+                warningBox.classList.remove('hidden');
+                warnUid.textContent = userId;
+            } else {
+                warningBox.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeDeployGuide() {
+            const modal = document.getElementById('deploy-modal');
+            const content = document.getElementById('deploy-modal-content');
+            currentDeployId = null;
+
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+
         // Create Script Logic
         function handleCreateScript(e) {
             e.preventDefault();
@@ -404,7 +535,6 @@
                 const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 
                 // Create GitHub Pages Style Link using the current userId
-                // Example: https://deeoxysaki.github.io/akiru-scripts/raw/silent_aim.lua
                 const rawLink = `https://${userId}.github.io/akiru-scripts/raw/${safeName}.lua`;
                 const loaderString = `loadstring(game:HttpGet('${rawLink}'))()`;
 
@@ -424,6 +554,9 @@
                 renderScripts();
                 closeModal();
                 showToast(`Created script "${name}"`, 'success');
+                
+                // Prompt deployment
+                setTimeout(() => openDeployGuide(scriptId), 500);
             };
 
             reader.onerror = function() {
@@ -483,7 +616,11 @@
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
                 
-                showToast(script.enabled ? 'Opening Raw Source...' : 'Script is Disabled (Kick Logic)', script.enabled ? 'success' : 'error');
+                if(!document.getElementById('deploy-modal').classList.contains('hidden')) {
+                     // don't show toast if inside modal to avoid clutter
+                } else {
+                    showToast(script.enabled ? 'Opening Raw Source...' : 'Script is Disabled (Kick Logic)', script.enabled ? 'success' : 'error');
+                }
             }
         }
 
@@ -540,10 +677,13 @@
 
                             <!-- Action Buttons -->
                             <div class="flex gap-2">
+                                <button onclick="openDeployGuide(${script.id})" class="p-2 bg-eclipse-surface hover:bg-eclipse-purple text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors shadow-glow-hover" title="Deploy / Fix 404">
+                                    <i data-lucide="rocket" class="w-4 h-4"></i>
+                                </button>
                                 <button onclick="downloadRaw(${script.id})" class="p-2 bg-eclipse-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors" title="View Raw Page (Simulated)">
                                     <i data-lucide="file-code" class="w-4 h-4"></i>
                                 </button>
-                                <button onclick="copyToClipboard('${script.loader.replace(/'/g, "\\'")}')" class="p-2 bg-eclipse-surface hover:bg-eclipse-purple text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors shadow-glow-hover" title="Copy Loader String">
+                                <button onclick="copyToClipboard('${script.loader.replace(/'/g, "\\'")}')" class="p-2 bg-eclipse-surface hover:bg-eclipse-purple/50 text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors" title="Copy Loader String">
                                     <i data-lucide="copy" class="w-4 h-4"></i>
                                 </button>
                                 <button onclick="deleteScript(${script.id})" class="p-2 bg-eclipse-surface hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg border border-eclipse-border transition-colors" title="Delete Script">
