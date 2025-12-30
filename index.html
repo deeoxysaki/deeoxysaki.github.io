@@ -132,13 +132,13 @@
                             <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-eclipse-surface rounded-full"></div>
                         </div>
                         <div class="flex flex-col items-start text-xs">
-                            <span class="text-gray-500 font-mono leading-none mb-0.5">USER</span>
+                            <span class="text-gray-500 font-mono leading-none mb-0.5">GITHUB</span>
                             <span id="user-id-display" class="text-gray-200 font-bold font-mono leading-none group-hover:text-eclipse-purple transition-colors">deeoxysaki</span>
                         </div>
                     </button>
 
                     <div class="hidden md:flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
-                        <span>v2.7.3</span>
+                        <span>v2.8.0</span>
                     </div>
                 </div>
             </div>
@@ -325,13 +325,14 @@
 
     <script>
         // --- Persistence Layer ---
-        const STORAGE_KEY_USER = 'akiru_user_id';
+        // Changed Key to force reset of any old UID style keys
+        const STORAGE_KEY_USER = 'akiru_github_username'; 
         const STORAGE_KEY_SCRIPTS = 'akiru_scripts';
         
         // Default to the requested user if no storage exists
         const DEFAULT_USER = 'deeoxysaki';
         
-        let userId = '';
+        let githubUser = '';
         let scripts = [];
         let currentDeployId = null; // Track which script is being deployed
 
@@ -343,10 +344,12 @@
 
         function initStorage() {
             // 1. Handle User ID (GitHub Username)
-            userId = localStorage.getItem(STORAGE_KEY_USER);
-            if (!userId) {
-                userId = DEFAULT_USER;
-                localStorage.setItem(STORAGE_KEY_USER, userId);
+            githubUser = localStorage.getItem(STORAGE_KEY_USER);
+            
+            // Basic sanity check to ensure it's not a generated UID (starting with "UID-")
+            if (!githubUser || githubUser.startsWith('UID-') || githubUser.startsWith('uid')) {
+                githubUser = DEFAULT_USER;
+                localStorage.setItem(STORAGE_KEY_USER, githubUser);
             }
             updateUserDisplay();
 
@@ -367,19 +370,19 @@
             const displayEl = document.getElementById('user-id-display');
             const avatarEl = document.getElementById('user-avatar');
             
-            displayEl.textContent = userId;
+            displayEl.textContent = githubUser;
             // Use GitHub's public avatar URL
-            avatarEl.src = `https://github.com/${userId}.png`;
+            avatarEl.src = `https://github.com/${githubUser}.png`;
             avatarEl.onerror = function() {
                 this.src = 'https://github.com/github.png'; // Fallback
             };
         }
 
         function editUsername() {
-            const newName = prompt("Enter GitHub Username:", userId);
+            const newName = prompt("Enter GitHub Username:", githubUser);
             if (newName && newName.trim() !== "") {
-                userId = newName.trim();
-                localStorage.setItem(STORAGE_KEY_USER, userId);
+                githubUser = newName.trim();
+                localStorage.setItem(STORAGE_KEY_USER, githubUser);
                 updateUserDisplay();
                 
                 // Warn about needing to recreate scripts if name changed
@@ -388,7 +391,7 @@
                          scripts.forEach(s => {
                             // Extract filename from old link or regenerate
                             const safeName = s.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                            s.rawLink = `https://${userId}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                            s.rawLink = `https://${githubUser}.github.io/akiru-scripts/raw/${safeName}.lua`;
                             s.loader = `loadstring(game:HttpGet('${s.rawLink}'))()`;
                          });
                          saveToStorage();
@@ -396,7 +399,7 @@
                          showToast('Links updated to new username', 'success');
                      }
                 } else {
-                    showToast(`User switched to ${userId}`, 'success');
+                    showToast(`User switched to ${githubUser}`, 'success');
                 }
             }
         }
@@ -480,9 +483,9 @@
             pathDisplay.textContent = `akiru-scripts/raw/${safeName}.lua`;
 
             // Check if User ID looks generated (UID-...)
-            if (userId.startsWith('UID-') || userId.startsWith('uid')) {
+            if (githubUser.startsWith('UID-') || githubUser.startsWith('uid')) {
                 warningBox.classList.remove('hidden');
-                warnUid.textContent = userId;
+                warnUid.textContent = githubUser;
             } else {
                 warningBox.classList.add('hidden');
             }
@@ -534,8 +537,8 @@
                 const scriptId = Date.now();
                 const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 
-                // Create GitHub Pages Style Link using the current userId
-                const rawLink = `https://${userId}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                // Create GitHub Pages Style Link using the current githubUser
+                const rawLink = `https://${githubUser}.github.io/akiru-scripts/raw/${safeName}.lua`;
                 const loaderString = `loadstring(game:HttpGet('${rawLink}'))()`;
 
                 const newScript = {
