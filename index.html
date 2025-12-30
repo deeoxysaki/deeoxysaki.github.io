@@ -1,128 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- RAW VIEW CHECKER - MUST BE FIRST -->
-    <script>
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('raw')) {
-                const id = urlParams.get('raw');
-                const currentUrl = window.location.href.split('?')[0];
-                
-                // Stop the browser from parsing the rest of the original file
-                if (window.stop) window.stop();
-
-                // Completely overwrite the document
-                document.open();
-                // We split the script tags to prevent the parser from closing the main script block prematurely
-                document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Denied - Valkyrie</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        eclipse: { black: '#020205', panel: '#11111b' }
-                    },
-                    fontFamily: {
-                        mono: ['"Fira Code"', 'monospace'],
-                        sans: ['"Inter"', 'sans-serif']
-                    }
-                }
-            }
-        }
-    <\/script>
-</head>
-<body class="bg-eclipse-black h-screen w-screen flex items-center justify-center font-sans overflow-hidden">
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-3xl"></div>
-    </div>
-    <div class="relative group max-w-md w-full mx-4">
-        <div class="absolute -inset-0.5 bg-gradient-to-b from-red-600/50 to-transparent rounded-2xl blur opacity-50 group-hover:opacity-75 transition duration-500"></div>
-        <div class="relative bg-eclipse-panel border border-red-500/20 p-8 rounded-2xl shadow-2xl backdrop-blur-xl">
-            <div class="flex flex-col items-center mb-8">
-                <div class="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20 shadow-[0_0_30px_rgba(220,38,38,0.2)] animate-pulse">
-                    <i class="fa-solid fa-lock text-3xl text-red-500"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-white tracking-[0.2em] mb-1">ACCESS DENIED</h1>
-                <p class="text-xs text-red-400/60 font-mono">RESTRICTED ENVIRONMENT</p>
-            </div>
-            <div class="bg-black/40 rounded-lg border border-white/5 p-4 mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Configuration ID</span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span>
-                </div>
-                <div class="font-mono text-sm text-gray-300 break-all select-all">${id}</div>
-            </div>
-            <div class="space-y-2">
-                <label class="text-[10px] text-gray-500 font-bold uppercase tracking-wider ml-1">Lua Execution Embed</label>
-                <div class="bg-[#050508] border border-blue-500/20 rounded-lg p-3 flex items-center justify-between group/code relative hover:border-blue-500/40 transition-colors">
-                    <code class="font-mono text-[10px] text-blue-400 truncate mr-4 select-all w-full">loadstring(game:HttpGet("${currentUrl}"):match("<!--LUA_START%[%[(.*)%]%]LUA_END-->"))()</code>
-                    <button onclick="copyLoader()" class="text-gray-500 hover:text-white transition-colors p-2 -mr-2">
-                        <i class="fa-regular fa-copy"></i>
-                    </button>
-                    <div id="copy-tooltip" class="absolute right-0 -top-8 bg-blue-600 text-white text-[10px] px-2 py-1 rounded opacity-0 transition-opacity">Copied!</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        function copyLoader() {
-            const text = 'loadstring(game:HttpGet("${currentUrl}"):match("<!--LUA_START%[%[(.*)%]%]LUA_END-->"))()';
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                const tooltip = document.getElementById('copy-tooltip');
-                tooltip.classList.remove('opacity-0');
-                setTimeout(() => tooltip.classList.add('opacity-0'), 2000);
-            } catch (err) {
-                console.error('Unable to copy', err);
-            }
-            document.body.removeChild(textArea);
-        }
-    <\/script>
-</body>
-</html>`);
-                document.close();
-                throw new Error("Raw View Active");
-            }
-        })();
-    </script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>valkyrie.rbx</title>
+    <title>Akiru Script Hub</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         eclipse: {
-                            black: '#020205',
-                            dark: '#0a0a12',
-                            panel: '#11111b',
-                            blue: '#3b82f6',
-                            glow: '#60a5fa',
+                            black: '#050505',
+                            dark: '#0a0a0a',
+                            surface: '#121212',
+                            border: '#2a2a2a',
+                            purple: '#8b5cf6',
+                            purpleGlow: '#7c3aed',
                         }
                     },
-                    boxShadow: {
-                        'eclipse-glow': '0 0 20px rgba(59, 130, 246, 0.5)',
-                        'eclipse-border': '0 0 10px rgba(59, 130, 246, 0.3)',
-                    },
                     fontFamily: {
-                        mono: ['"Fira Code"', 'monospace'],
-                        sans: ['"Inter"', 'sans-serif']
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px -5px rgba(139, 92, 246, 0.3)',
+                        'glow-lg': '0 0 40px -10px rgba(124, 58, 237, 0.4)',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
                     }
                 }
             }
@@ -131,442 +50,541 @@
     <style>
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #0a0a12; 
+            background: #0a0a0a; 
         }
         ::-webkit-scrollbar-thumb {
-            background: #1e1e2e; 
-            border-radius: 3px;
+            background: #2a2a2a; 
+            border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #3b82f6; 
+            background: #8b5cf6; 
         }
 
-        /* Eclipse Background Animation */
-        .bg-eclipse {
-            background: radial-gradient(circle at center, #0f172a 0%, #000000 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .eclipse-orb {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 40vw;
-            height: 40vw;
-            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-            animation: pulse 8s infinite alternate;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
-            100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
-        }
-
+        /* Glassmorphism utilities */
         .glass-panel {
-            background: rgba(17, 17, 27, 0.85);
+            background: rgba(18, 18, 18, 0.7);
             backdrop-filter: blur(12px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.1);
         }
 
-        .tab-btn.active {
-            background: linear-gradient(90deg, rgba(59,130,246,0.2) 0%, rgba(0,0,0,0) 100%);
-            border-left: 3px solid #3b82f6;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(59,130,246,0.8);
+        .glass-modal {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        /* Eclipse Gradient Background */
+        .bg-eclipse {
+            background-color: #050505;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(58, 20, 95, 0.4) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(46, 16, 101, 0.2) 0%, transparent 40%);
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #8b5cf6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #8b5cf6;
+        }
+        
+        /* File Input Styling */
+        input[type="file"]::file-selector-button {
+            background-color: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: rgba(139, 92, 246, 0.2);
         }
     </style>
 </head>
-<body class="bg-eclipse h-screen w-screen flex items-center justify-center text-gray-300 font-sans selection:bg-blue-500 selection:text-white">
+<body class="bg-eclipse text-gray-300 font-sans min-h-screen selection:bg-eclipse-purple selection:text-white overflow-x-hidden">
 
-    <!-- Background Orb -->
-    <div class="eclipse-orb"></div>
-
-    <!-- Main Interface Window -->
-    <div class="glass-panel w-[900px] h-[600px] rounded-xl flex shadow-2xl z-10 overflow-hidden relative">
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto px-6 py-12 relative z-10">
         
-        <!-- Sidebar (Left Center Navigation) -->
-        <div class="w-64 bg-eclipse-dark/90 border-r border-white/5 flex flex-col shrink-0">
-            <!-- Header -->
-            <div class="p-6">
-                <h1 class="text-2xl font-bold text-white tracking-wider font-mono flex items-center gap-2">
-                    <i class="fa-solid fa-moon text-blue-500 animate-pulse"></i>
-                    valkyrie<span class="text-blue-500">.rbx</span>
+        <!-- Header Section -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <!-- Title: Akiru -->
+                <h1 class="text-5xl font-extrabold tracking-tighter text-white">
+                    A<span class="text-eclipse-purple drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]">k</span>iru
                 </h1>
-                <div class="text-xs text-blue-400 mt-1 opacity-70">v2.4.0-release</div>
-            </div>
-
-            <!-- Horizontal Line -->
-            <div class="w-full h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent mb-4"></div>
-
-            <!-- Tab Container -->
-            <nav class="flex-1 px-3 space-y-2 overflow-y-auto">
-                <button onclick="switchTab('scripts')" id="tab-scripts" class="tab-btn active w-full text-left px-4 py-3 rounded-r-lg hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-3">
-                    <i class="fa-solid fa-code w-5 text-center"></i>
-                    Scripts
-                </button>
-                <button onclick="switchTab('loaders')" id="tab-loaders" class="tab-btn w-full text-left px-4 py-3 rounded-r-lg hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-3">
-                    <i class="fa-solid fa-download w-5 text-center"></i>
-                    Loaders
-                </button>
-            </nav>
-
-            <!-- User Profile / Footer -->
-            <div class="p-4 bg-black/20 border-t border-white/5">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center text-black font-bold text-xs shadow-eclipse-glow">
-                        <i class="fa-brands fa-google"></i>
-                    </div>
-                    <div class="flex flex-col overflow-hidden">
-                        <span id="user-id-display" class="text-xs font-bold text-white truncate w-32">Loading...</span>
-                        <span class="text-[10px] text-green-400">● Connected</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content Area -->
-        <main class="flex-1 bg-eclipse-panel/50 p-8 overflow-y-auto relative">
-            
-            <!-- Scripts Tab -->
-            <div id="content-scripts" class="tab-content animate-fade-in">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold text-white">Execution Library</h2>
-                </div>
-
-                <!-- Scripts List Container (Dynamic Items Added Here) -->
-                <div id="scripts-list" class="space-y-3 mb-4">
-                    <!-- Items will be injected here via JS -->
-                </div>
-
-                <!-- Add Button Container -->
-                <div class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-lg bg-black/20 hover:bg-black/30 transition-colors">
-                    <button onclick="toggleModal(true)" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-lg shadow-blue-900/20 transition-all transform hover:scale-105 flex items-center gap-2 text-sm">
-                        <i class="fa-solid fa-plus"></i>
-                        New Scripts
-                    </button>
-                    <p class="text-[10px] text-gray-500 mt-2">Add a new script configuration</p>
-                </div>
-            </div>
-
-            <!-- Loaders Tab -->
-            <div id="content-loaders" class="tab-content hidden animate-fade-in">
-                <div class="mb-6">
-                    <h2 class="text-xl font-bold text-white">Scripts Loaders</h2>
-                    <p class="text-xs text-gray-500 mt-1">Manage initialization scripts for different engines.</p>
-                </div>
-
-                <div id="loaders-list" class="space-y-3">
-                     <!-- Loaders will be injected here via JS -->
-                </div>
-
-                <div id="empty-loaders-msg" class="flex items-center justify-center h-32 text-gray-500 text-sm italic border border-white/5 rounded-lg bg-black/20">
-                    No loaders generated. Create a script to generate a loader.
-                </div>
-            </div>
-
-        </main>
-
-        <!-- New Script Modal (Hidden by default) -->
-        <div id="new-script-modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-[#11111b] border border-blue-500/30 w-full max-w-sm rounded-xl shadow-2xl p-6 transform transition-all">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-file-code text-blue-500"></i> New Configuration
-                    </h3>
-                    <button onclick="toggleModal(false)" class="text-gray-500 hover:text-white transition-colors">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
                 
-                <div class="space-y-4">
-                    <!-- Config Name Input -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Config Name</label>
-                        <input id="script-name-input" type="text" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-gray-600" placeholder="e.g. Auto-Farm V2">
+                <!-- User Info & Status -->
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center space-x-2 bg-eclipse-surface/80 border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400 backdrop-blur-sm shadow-sm" title="Your User ID">
+                        <i data-lucide="user" class="w-3 h-3 text-eclipse-purple"></i>
+                        <span id="user-id-display" class="text-gray-300 select-all">Loading...</span>
                     </div>
+
+                    <div class="flex items-center space-x-2 bg-eclipse-surface border border-eclipse-border px-3 py-1.5 rounded-full text-xs font-mono text-gray-400">
+                        <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span>v2.6.0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horizontal Divider with Gradient -->
+            <div class="h-[1px] w-full bg-gradient-to-r from-eclipse-purple/0 via-eclipse-purple/60 to-eclipse-purple/0 mt-6 mb-8 shadow-glow"></div>
+        </header>
+
+        <!-- Main Layout Container: Vertical Tabs + Content -->
+        <div class="flex flex-col md:flex-row gap-8">
+            
+            <!-- Vertical Tab Navigation -->
+            <aside class="w-full md:w-64 flex-shrink-0 flex flex-col gap-4">
+                <nav class="flex flex-col space-y-2 bg-eclipse-surface/50 p-2 rounded-lg border border-eclipse-border">
+                    <button onclick="switchTab('scripts')" id="tab-scripts" class="w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-all duration-300 bg-eclipse-purple/20 text-white border border-eclipse-purple/50 shadow-glow flex items-center">
+                        <i data-lucide="code-2" class="w-4 h-4 mr-3"></i>Scripts
+                    </button>
+                    <button onclick="switchTab('loaders')" id="tab-loaders" class="w-full text-left px-4 py-3 rounded-md text-sm font-medium transition-all duration-300 text-gray-400 hover:text-white hover:bg-white/5 border border-transparent flex items-center">
+                        <i data-lucide="download-cloud" class="w-4 h-4 mr-3"></i>Loaders
+                    </button>
+                </nav>
+
+                <!-- Data Management -->
+                <div class="bg-eclipse-surface/30 p-4 rounded-lg border border-eclipse-border/50">
+                    <p class="text-xs text-gray-500 mb-3 font-mono">DATA MANAGEMENT</p>
+                    <button onclick="resetData()" class="w-full text-left px-3 py-2 rounded text-xs font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors flex items-center border border-transparent hover:border-red-500/20">
+                        <i data-lucide="trash-2" class="w-3 h-3 mr-2"></i> Reset Local Data
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <main class="flex-1 relative min-h-[400px]">
+                
+                <!-- Scripts Tab Content -->
+                <div id="content-scripts" class="flex flex-col gap-6 transition-opacity duration-300">
                     
-                    <!-- File Upload -->
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 mb-1.5 uppercase tracking-wide">Upload File</label>
-                        <div class="relative border-2 border-dashed border-white/10 rounded-lg p-6 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-center cursor-pointer group">
-                            <input type="file" id="file-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-600 group-hover:text-blue-500 mb-2 transition-colors"></i>
-                            <p class="text-xs text-gray-400 group-hover:text-gray-300">Drag file or click to browse</p>
-                            <p class="text-[10px] text-gray-600 mt-1">Supports .lua, .txt</p>
+                    <!-- Action Bar -->
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-white">Your Scripts</h2>
+                        <button onclick="openModal()" class="group flex items-center px-5 py-2.5 bg-eclipse-purple hover:bg-eclipse-purpleGlow text-white rounded-lg transition-all shadow-glow hover:shadow-glow-lg font-medium">
+                            <i data-lucide="plus" class="w-4 h-4 mr-2 transition-transform group-hover:rotate-90"></i>
+                            Create Script
+                        </button>
+                    </div>
+
+                    <!-- Script Container (Dynamic) -->
+                    <div id="script-container" class="grid grid-cols-1 gap-4">
+                        <!-- Empty State (Initially Visible) -->
+                        <div id="empty-state" class="flex flex-col items-center justify-center p-12 border border-dashed border-eclipse-border rounded-xl bg-eclipse-surface/30">
+                            <div class="p-4 bg-eclipse-purple/10 rounded-full mb-4">
+                                <i data-lucide="ghost" class="w-8 h-8 text-eclipse-purple/50"></i>
+                            </div>
+                            <p class="text-gray-500 font-mono text-sm">No scripts found. Create one to get started.</p>
                         </div>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="flex gap-3 pt-4">
-                        <button onclick="toggleModal(false)" class="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-bold text-white transition-colors">
-                            Cancel
-                        </button>
-                        <button onclick="submitScript()" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold text-white shadow-lg shadow-blue-900/20 transition-colors">
-                            Submit
-                        </button>
-                    </div>
                 </div>
+
+                <!-- Loaders Tab Content -->
+                <div id="content-loaders" class="hidden transition-opacity duration-300">
+                   <div class="flex flex-col items-center justify-center p-12 border border-dashed border-eclipse-border rounded-xl bg-eclipse-surface/30">
+                        <i data-lucide="server-off" class="w-8 h-8 text-gray-600 mb-4"></i>
+                        <p class="text-gray-500 font-mono text-sm">Loader configuration is empty.</p>
+                   </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="fixed bottom-6 right-6 z-50 pointer-events-none"></div>
+
+        <!-- Create Script Modal -->
+        <div id="create-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeModal()"></div>
+            
+            <!-- Modal Content -->
+            <div class="glass-modal w-full max-w-md p-6 rounded-2xl relative shadow-2xl transform scale-95 opacity-0 transition-all duration-300" id="modal-content">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                
+                <h3 class="text-xl font-bold text-white mb-1">New Script</h3>
+                <p class="text-sm text-gray-400 mb-6">Upload your Lua script to generate a loader.</p>
+                
+                <form id="create-script-form" onsubmit="handleCreateScript(event)">
+                    <!-- Name Input -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-mono text-gray-400 mb-2 uppercase tracking-wider">Script Name</label>
+                        <input type="text" id="script-name" required placeholder="e.g. Silent Aim V3" 
+                            class="w-full bg-eclipse-surface border border-eclipse-border rounded-lg px-4 py-3 text-white focus:outline-none focus:border-eclipse-purple focus:ring-1 focus:ring-eclipse-purple transition-all placeholder-gray-600">
+                    </div>
+
+                    <!-- File Input -->
+                    <div class="mb-6">
+                        <label class="block text-xs font-mono text-gray-400 mb-2 uppercase tracking-wider">Source File (.lua)</label>
+                        <div class="relative group">
+                            <input type="file" id="script-file" accept=".lua" required
+                                class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-eclipse-purple/10 file:text-eclipse-purple hover:file:bg-eclipse-purple/20 cursor-pointer border border-eclipse-border rounded-lg bg-eclipse-surface p-1">
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-eclipse-purple hover:bg-eclipse-purpleGlow text-white font-bold py-3 rounded-lg shadow-glow transition-all transform active:scale-95 flex items-center justify-center">
+                        <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i>
+                        Create Loader
+                    </button>
+                </form>
             </div>
         </div>
 
     </div>
 
     <script>
-        // State Management
-        let appData = {
-            userId: null,
-            scripts: []
-        };
+        // --- Persistence Layer ---
+        const STORAGE_KEY_USER = 'akiru_user_id';
+        const STORAGE_KEY_SCRIPTS = 'akiru_scripts';
+        
+        let userId = '';
+        let scripts = [];
 
-        // Initialization
+        // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            renderAll();
+            lucide.createIcons();
+            initStorage();
         });
 
-        function loadData() {
-            const savedUserId = localStorage.getItem('valkyrie_userid_gmail');
-            if (savedUserId) {
-                appData.userId = savedUserId;
-            } else {
-                const randomNum = Math.floor(Math.random() * 900000 + 100000);
-                appData.userId = `user${randomNum}@gmail.com`;
-                localStorage.setItem('valkyrie_userid_gmail', appData.userId);
+        function initStorage() {
+            // 1. Handle User ID
+            userId = localStorage.getItem(STORAGE_KEY_USER);
+            if (!userId) {
+                // Generate simple unique ID
+                userId = 'UID-' + Math.random().toString(36).substr(2, 6).toUpperCase() + '-' + Date.now().toString(36).toUpperCase();
+                localStorage.setItem(STORAGE_KEY_USER, userId);
             }
-            document.getElementById('user-id-display').textContent = appData.userId;
+            document.getElementById('user-id-display').textContent = userId;
 
-            const savedScripts = localStorage.getItem('valkyrie_scripts_' + appData.userId);
+            // 2. Handle Scripts
+            const savedScripts = localStorage.getItem(STORAGE_KEY_SCRIPTS);
             if (savedScripts) {
-                appData.scripts = JSON.parse(savedScripts);
-            }
-        }
-
-        function saveData() {
-            if (appData.userId) {
-                localStorage.setItem('valkyrie_scripts_' + appData.userId, JSON.stringify(appData.scripts));
-            }
-        }
-
-        function switchTab(tabName) {
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => {
-                content.classList.add('hidden');
-            });
-            const selectedContent = document.getElementById('content-' + tabName);
-            if (selectedContent) {
-                selectedContent.classList.remove('hidden');
-            }
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.remove('border-l-4');
-                btn.classList.remove('border-blue-500');
-                btn.classList.add('text-gray-400');
-                btn.classList.remove('text-white');
-            });
-            const selectedBtn = document.getElementById('tab-' + tabName);
-            if (selectedBtn) {
-                selectedBtn.classList.add('active');
-                selectedBtn.classList.remove('text-gray-400');
-            }
-        }
-
-        function toggleModal(show) {
-            const modal = document.getElementById('new-script-modal');
-            const input = document.getElementById('script-name-input');
-            if (show) {
-                modal.classList.remove('hidden');
-                setTimeout(() => input.focus(), 100); 
-            } else {
-                modal.classList.add('hidden');
-            }
-        }
-
-        function generateRandomId(length) {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            for (let i = 0; i < length; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
-        }
-
-        function getBaseUrl() {
-            return window.location.href.split('?')[0];
-        }
-
-        function submitScript() {
-            const nameInput = document.getElementById('script-name-input');
-            const name = nameInput.value.trim() || "Untitled Configuration";
-            
-            const newScript = {
-                id: 'script-' + Date.now(),
-                name: name,
-                active: false,
-                rawId: generateRandomId(58)
-            };
-
-            appData.scripts.push(newScript);
-            saveData();
-            
-            renderScriptItem(newScript);
-            renderLoaderItem(newScript);
-            
-            nameInput.value = '';
-            toggleModal(false);
-            document.getElementById('empty-loaders-msg').style.display = 'none';
-        }
-
-        function renderAll() {
-            const scriptsList = document.getElementById('scripts-list');
-            const loadersList = document.getElementById('loaders-list');
-            scriptsList.innerHTML = '';
-            loadersList.innerHTML = '';
-
-            appData.scripts.forEach(script => {
-                renderScriptItem(script);
-                renderLoaderItem(script);
-            });
-
-            if (appData.scripts.length > 0) {
-                document.getElementById('empty-loaders-msg').style.display = 'none';
-            }
-        }
-
-        function renderScriptItem(script) {
-            const list = document.getElementById('scripts-list');
-            const item = document.createElement('div');
-            item.className = 'bg-black/30 border border-white/5 p-3 rounded-lg flex items-center justify-between group hover:border-blue-500/30 transition-all animate-fade-in';
-            
-            const statusClass = script.active 
-                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
-                : 'bg-gray-700/50 text-gray-400 border-gray-600/30';
-            const statusText = script.active ? 'Active' : 'Inactive';
-            const checkedAttr = script.active ? 'checked' : '';
-
-            // --- KEY FIX: Updated Loader format for Roblox compatibility ---
-            const currentUrl = getBaseUrl();
-            const loaderString = `loadstring(game:HttpGet("${currentUrl}"):match("<!--LUA_START%[%[(.*)%]%]LUA_END-->"))()`;
-
-            item.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <div class="flex flex-col">
-                        <h4 class="text-sm font-bold text-white tracking-wide">${script.name}</h4>
-                        <div class="flex items-center gap-2 mt-1">
-                             <span id="status-${script.id}" class="text-[10px] ${statusClass} px-2 py-0.5 rounded border transition-colors">${statusText}</span>
-                             <span class="text-[10px] text-gray-600">• Lua</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-5">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" ${checkedAttr} class="sr-only peer" onchange="toggleScript('${script.id}')">
-                        <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
-                    </label>
-
-                    <div class="w-px h-6 bg-white/10"></div>
-
-                    <button onclick="copyToClipboard('${loaderString.replace(/"/g, "&quot;")}')" class="text-gray-400 hover:text-blue-400 transition-colors tooltip-btn" title="Copy Loader">
-                        <i class="fa-solid fa-copy"></i>
-                    </button>
-
-                    <button onclick="downloadScript('${script.name}')" class="text-gray-400 hover:text-white transition-colors tooltip-btn" title="Download Source">
-                        <i class="fa-solid fa-file-arrow-down"></i>
-                    </button>
-                </div>
-            `;
-            list.appendChild(item);
-        }
-
-        function renderLoaderItem(script) {
-            const list = document.getElementById('loaders-list');
-            const currentUrl = getBaseUrl();
-            const loaderString = `loadstring(game:HttpGet("${currentUrl}"):match("<!--LUA_START%[%[(.*)%]%]LUA_END-->"))()`;
-            
-            const loaderItem = document.createElement('div');
-            loaderItem.className = 'bg-black/30 border border-white/5 p-4 rounded-lg animate-fade-in hover:bg-black/40 transition-colors';
-            loaderItem.innerHTML = `
-                <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-sm font-bold text-white flex items-center gap-2">
-                        <i class="fa-brands fa-google text-gray-500"></i> ${script.name}
-                    </h4>
-                    <span class="text-[10px] text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-mono">RAW</span>
-                </div>
-                <div class="bg-black/50 rounded border border-white/10 p-2 flex items-center justify-between group relative">
-                    <code class="text-[10px] text-gray-400 font-mono truncate mr-4 select-all w-full">${loaderString}</code>
-                    <button onclick="copyToClipboard('${loaderString.replace(/"/g, "&quot;")}')" class="text-gray-500 hover:text-white transition-colors shrink-0 p-1">
-                        <i class="fa-solid fa-copy"></i>
-                    </button>
-                </div>
-            `;
-            list.appendChild(loaderItem);
-        }
-
-        function toggleScript(id) {
-            const script = appData.scripts.find(s => s.id === id);
-            if (script) {
-                script.active = !script.active;
-                saveData();
-                const statusBadge = document.getElementById('status-' + id);
-                if (script.active) {
-                    statusBadge.textContent = 'Active';
-                    statusBadge.className = 'text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_10px_rgba(59,130,246,0.2)] px-2 py-0.5 rounded transition-colors';
-                } else {
-                    statusBadge.textContent = 'Inactive';
-                    statusBadge.className = 'text-[10px] bg-gray-700/50 text-gray-400 border border-gray-600/30 px-2 py-0.5 rounded transition-colors';
+                try {
+                    scripts = JSON.parse(savedScripts);
+                    renderScripts();
+                } catch (e) {
+                    console.error('Failed to parse scripts:', e);
+                    scripts = [];
                 }
             }
         }
 
-        function downloadScript(name) {
-            const hiddenContent = "-- You cant look\n-- Source is protected by Valkyrie.rbx";
-            const blob = new Blob([hiddenContent], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = name + '.lua';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY_SCRIPTS, JSON.stringify(scripts));
+            } catch (e) {
+                showToast('Failed to save data! (Quota Exceeded?)', 'error');
+            }
         }
 
+        function resetData() {
+            if (confirm('Are you sure you want to reset all local data? This cannot be undone.')) {
+                localStorage.removeItem(STORAGE_KEY_USER);
+                localStorage.removeItem(STORAGE_KEY_SCRIPTS);
+                location.reload();
+            }
+        }
+
+        // --- UI Logic ---
+
+        // Tab Switching
+        function switchTab(tabName) {
+            const tabs = ['scripts', 'loaders'];
+            
+            tabs.forEach(t => {
+                const button = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                
+                if (t === tabName) {
+                    button.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-white/5', 'border-transparent');
+                    button.classList.add('bg-eclipse-purple/20', 'text-white', 'border-eclipse-purple/50', 'shadow-glow');
+                    content.classList.remove('hidden');
+                } else {
+                    button.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-white/5', 'border-transparent');
+                    button.classList.remove('bg-eclipse-purple/20', 'text-white', 'border-eclipse-purple/50', 'shadow-glow');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Modal Functions
+        function openModal() {
+            const modal = document.getElementById('create-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('create-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('create-script-form').reset();
+            }, 300);
+        }
+
+        // Create Script Logic
+        function handleCreateScript(e) {
+            e.preventDefault();
+            
+            const nameInput = document.getElementById('script-name');
+            const fileInput = document.getElementById('script-file');
+            
+            const name = nameInput.value;
+            const file = fileInput.files[0];
+
+            if (!file) return;
+
+            // Use FileReader to get the actual text content of the uploaded script
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const fileContent = event.target.result;
+                
+                const now = new Date();
+                const dateString = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                
+                // Generate Safe ID and Name
+                const scriptId = Date.now();
+                const safeName = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                // Format User ID as a subdomain-like string
+                const safeUserId = userId.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                // Create GitHub Pages Style Link
+                const rawLink = `https://${safeUserId}.github.io/akiru-scripts/raw/${safeName}.lua`;
+                const loaderString = `loadstring(game:HttpGet('${rawLink}'))()`;
+
+                const newScript = {
+                    id: scriptId,
+                    name: name,
+                    fileName: file.name,
+                    date: `${dateString} at ${timeString}`,
+                    loader: loaderString,
+                    rawLink: rawLink, // Store the simulated link
+                    content: fileContent, // Store the actual file source
+                    enabled: true
+                };
+
+                scripts.unshift(newScript);
+                saveToStorage(); // Save persistence
+                renderScripts();
+                closeModal();
+                showToast(`Created script "${name}"`, 'success');
+            };
+
+            reader.onerror = function() {
+                showToast('Error reading file', 'error');
+            };
+
+            // Read the file as text
+            reader.readAsText(file);
+        }
+
+        function toggleScript(id) {
+            const script = scripts.find(s => s.id === id);
+            if (script) {
+                script.enabled = !script.enabled;
+                saveToStorage(); // Save persistence
+                renderScripts(); 
+                showToast(`Script ${script.enabled ? 'Enabled' : 'Disabled'}`, script.enabled ? 'success' : 'default');
+            }
+        }
+
+        function deleteScript(id) {
+            if (confirm('Delete this script configuration?')) {
+                const index = scripts.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    scripts.splice(index, 1);
+                    saveToStorage(); // Save persistence
+                    renderScripts();
+                    showToast('Script deleted', 'default');
+                }
+            }
+        }
+
+        // Logic to simulate "Downloading Raw Page"
+        function downloadRaw(id) {
+            const script = scripts.find(s => s.id === id);
+            if (script) {
+                let contentToDownload = "";
+                let filename = "";
+
+                if (script.enabled) {
+                    // Enabled: Serve original source code
+                    contentToDownload = script.content;
+                    filename = `${script.name.replace(/\s+/g, '_')}_raw.lua`;
+                } else {
+                    // Disabled: Serve Kick Script
+                    contentToDownload = `game:GetService("Players").LocalPlayer:Kick("This Script ${script.id} dont exist or is disabled")`;
+                    filename = `${script.name.replace(/\s+/g, '_')}_disabled.lua`;
+                }
+
+                const blob = new Blob([contentToDownload], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showToast(script.enabled ? 'Opening Raw Source...' : 'Script is Disabled (Kick Logic)', script.enabled ? 'success' : 'error');
+            }
+        }
+
+        // Render Loop
+        function renderScripts() {
+            const container = document.getElementById('script-container');
+            const emptyState = document.getElementById('empty-state');
+
+            if (scripts.length === 0) {
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                emptyState.style.display = 'flex';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = ''; 
+            container.appendChild(emptyState);
+
+            scripts.forEach(script => {
+                const card = document.createElement('div');
+                card.className = `glass-panel p-5 rounded-xl border-l-4 transition-all duration-300 animate-fade-in group hover:shadow-glow hover:-translate-y-1 ${script.enabled ? 'border-l-eclipse-purple' : 'border-l-gray-600 opacity-75'}`;
+                
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <!-- Left Info -->
+                        <div class="flex items-start gap-4">
+                            <div class="p-3 rounded-lg ${script.enabled ? 'bg-eclipse-purple/10 text-eclipse-purple' : 'bg-gray-800 text-gray-500'} transition-colors">
+                                <i data-lucide="${script.enabled ? 'zap' : 'power-off'}" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white leading-tight mb-1">${script.name}</h3>
+                                <div class="flex items-center gap-3 text-xs text-gray-500 font-mono">
+                                    <span class="flex items-center"><i data-lucide="calendar" class="w-3 h-3 mr-1"></i> ${script.date}</span>
+                                    <span class="bg-eclipse-surface px-1.5 py-0.5 rounded border border-eclipse-border">${script.fileName}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Actions -->
+                        <div class="flex items-center gap-3 md:pl-4 md:border-l md:border-eclipse-border/50">
+                            
+                            <!-- Toggle -->
+                            <div class="flex items-center mr-2">
+                                <label for="toggle-${script.id}" class="flex items-center cursor-pointer relative" title="Enable/Disable Raw Access">
+                                    <div class="relative">
+                                        <input type="checkbox" id="toggle-${script.id}" class="sr-only" ${script.enabled ? 'checked' : ''} onchange="toggleScript(${script.id})">
+                                        <div class="w-10 h-6 bg-gray-700 rounded-full shadow-inner transition-colors ${script.enabled ? 'bg-eclipse-purple/50' : ''}"></div>
+                                        <div class="dot absolute w-4 h-4 bg-white rounded-full shadow left-1 top-1 transition transition-transform duration-300 ${script.enabled ? 'translate-x-full bg-eclipse-purple' : ''}"></div>
+                                    </div>
+                                    <span class="ml-2 text-xs font-mono uppercase text-gray-500">${script.enabled ? 'ON' : 'OFF'}</span>
+                                </label>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex gap-2">
+                                <button onclick="downloadRaw(${script.id})" class="p-2 bg-eclipse-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors" title="View Raw Page (Simulated)">
+                                    <i data-lucide="file-code" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="copyToClipboard('${script.loader.replace(/'/g, "\\'")}')" class="p-2 bg-eclipse-surface hover:bg-eclipse-purple text-gray-300 hover:text-white rounded-lg border border-eclipse-border transition-colors shadow-glow-hover" title="Copy Loader String">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteScript(${script.id})" class="p-2 bg-eclipse-surface hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg border border-eclipse-border transition-colors" title="Delete Script">
+                                    <i data-lucide="trash" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            lucide.createIcons();
+        }
+
+        // Clipboard Functionality
         function copyToClipboard(text) {
-             const textArea = document.createElement("textarea");
-             textArea.value = text;
-             document.body.appendChild(textArea);
-             textArea.select();
-             try {
-                document.execCommand('copy');
-             } catch (err) {
-                console.error('Unable to copy', err);
-             }
-             document.body.removeChild(textArea);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Loader copied to clipboard!', 'success');
+                }).catch(err => {
+                    showToast('Failed to copy', 'error');
+                });
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Loader copied to clipboard!', 'success');
+                } catch (err) {
+                    showToast('Failed to copy', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            toast.className = `
+                mb-3 p-4 rounded-lg shadow-lg backdrop-blur-md border flex items-center gap-3 transform translate-y-10 opacity-0 transition-all duration-300
+                ${type === 'success' ? 'bg-black/80 border-green-500/50 text-green-400' : 
+                  type === 'error' ? 'bg-black/80 border-red-500/50 text-red-400' :
+                  'bg-black/80 border-gray-500/50 text-gray-300'}
+            `;
+            
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : 'info'}" class="w-5 h-5"></i>
+                <span class="font-medium text-sm text-white">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons({ root: toast });
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
-    
-    <!-- LUA SOURCE EMBED - This is where the script lives -->
-    <!-- The Loader regex extracts content between LUA_START[[ and ]]LUA_END -->
-    <!-- You can edit this manually before uploading to GitHub -->
-    <!--LUA_START[[
-        print("------------------------------------------------")
-        print("VALKYRIE LOADER EXECUTED")
-        print("Welcome, User!")
-        print("Script Source Hidden Successfully.")
-        print("------------------------------------------------")
-        
-        -- Put your real lua script here:
-        -- warn("This is a test script running from GitHub Pages")
-    ]]LUA_END-->
-
 </body>
-  </html>
+</html>
