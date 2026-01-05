@@ -1,273 +1,592 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aethel Script Hub</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>
-tailwind.config = {
-theme: {
-extend: {
-colors: {
-eclipse: {
-black: '#050505',
-dark: '#0a0a0a',
-surface: '#121212',
-border: '#2a2a2a',
-purple: '#8b5cf6',
-purpleGlow: '#7c3aed',
-}
-},
-fontFamily: {
-sans: ['Inter', 'sans-serif'],
-mono: ['JetBrains Mono', 'monospace'],
-},
-boxShadow: {
-'glow': '0 0 20px -5px rgba(139, 92, 246, 0.3)',
-'glow-lg': '0 0 40px -10px rgba(124, 58, 237, 0.4)',
-},
-animation: {
-'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-'float': 'float 3s ease-in-out infinite',
-'fade-in': 'fadeIn 0.3s ease-out forwards',
-'slide-up': 'slideUp 0.5s ease-out forwards',
-},
-keyframes: {
-fadeIn: {
-'0%': { opacity: '0' },
-'100%': { opacity: '1' },
-},
-slideUp: {
-'0%': { opacity: '0', transform: 'translateY(20px)' },
-'100%': { opacity: '1', transform: 'translateY(0)' },
-},
-float: {
-'0%, 100%': { transform: 'translateY(0) rotate(-12deg)' },
-'50%': { transform: 'translateY(-5px) rotate(-12deg)' },
-}
-}
-}
-}
-}
-</script>
-<style>
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
-.glass-panel { background: rgba(18, 18, 18, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(139, 92, 246, 0.1); }
-.bg-eclipse { background-color: #050505; background-image: radial-gradient(circle at 10% 20%, rgba(58, 20, 95, 0.4) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(46, 16, 101, 0.2) 0%, transparent 40%); }
-.tab-btn.active { background-color: rgba(139, 92, 246, 0.2); color: white; border-color: rgba(139, 92, 246, 0.5); box-shadow: 0 0 15px -5px rgba(139, 92, 246, 0.3); }
-</style>
-</head>
-<body class="bg-eclipse text-gray-300 font-sans min-h-screen selection:bg-eclipse-purple selection:text-white overflow-x-hidden flex flex-col">
+import React, { useState, useRef, useEffect } from 'react';
+import { Shield, LayoutDashboard, Scan, Activity, FileCode, AlertTriangle, ArrowRight, X, Trash2, Code, Terminal, Cpu, Database, CheckCircle, Minimize2, Maximize2, FileText } from 'lucide-react';
 
-<!-- Topbar -->
-<nav class="fixed top-0 left-0 w-full h-20 z-50 glass-panel border-b border-eclipse-border/50 flex items-center justify-between px-6 md:px-12 backdrop-blur-xl bg-black/20">
-    <div class="relative pt-2">
-        <i data-lucide="crown" class="absolute -top-4 -left-3 w-6 h-6 text-eclipse-purple animate-float filter drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]"></i>
-        <h1 class="text-3xl font-extrabold tracking-tighter text-white">
-            Aet<span class="text-eclipse-purple drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]">hel</span>
-        </h1>
-    </div>
+// --- Constants & Helpers ---
+
+const LUA_KEYWORDS = new Set([
+  'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for', 'function', 'if',
+  'in', 'local', 'nil', 'not', 'or', 'repeat', 'return', 'then', 'true', 'until', 'while',
+  'print', 'math', 'table', 'string', 'pairs', 'ipairs', 'next', 'select', 'pcall', 'xpcall',
+  'type', 'tostring', 'tonumber', 'error', 'assert', 'setmetatable', 'getmetatable', 'rawset', 'rawget',
+  'game', 'workspace', 'script', 'wait', 'spawn', 'delay', 'tick', 'task'
+]);
+
+// Helper to remove Lua comments before processing
+const stripLuaComments = (code) => {
+  if (!code) return "";
+  // 1. Remove block comments --[[ ... ]]
+  let clean = code.replace(/--\[\[[\s\S]*?\]\]/g, '');
+  // 2. Remove single line comments -- ...
+  clean = clean.replace(/--.*/g, '');
+  // 3. Normalize multiple empty lines to single lines for cleaner view
+  clean = clean.replace(/^\s*[\r\n]/gm, ''); 
+  return clean;
+};
+
+const extractAdvancedAnalysis = (code) => {
+  // 1. Extract Identifiers (Variables, Function names, Table keys)
+  const wordRegex = /\b[a-zA-Z_][a-zA-Z0-9_]*\b/g;
+  const allWords = code.match(wordRegex) || [];
+  const identifiers = new Set();
+  
+  // 2. Extract String Literals (Double and Single quotes) - vital for "same appearance"
+  const stringRegex = /(["'])(?:(?=(\\?))\2.)*?\1/g;
+  const strings = new Set();
+  let strMatch;
+  while ((strMatch = stringRegex.exec(code)) !== null) {
+      strings.add(strMatch[0]); 
+  }
+
+  allWords.forEach(word => {
+    // We strictly filter keywords to focus on USER defined names (variables, tables, etc)
+    if (!LUA_KEYWORDS.has(word) && isNaN(word) && word.length > 1) { 
+      identifiers.add(word);
+    }
+  });
+
+  return { identifiers, strings };
+};
+
+// --- Components ---
+
+const CodeViewer = ({ title, code, matches, stringMatches, colorTheme = "red" }) => {
+    const lines = code.split('\n');
     
-    <div class="flex space-x-2 bg-black/40 p-1 rounded-lg border border-eclipse-border/50">
-        <button onclick="switchTab('home')" id="btn-home" class="tab-btn active px-6 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all duration-300 border border-transparent">
-            Home
-        </button>
-        <button onclick="switchTab('games')" id="btn-games" class="tab-btn px-6 py-2 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-all duration-300 border border-transparent">
-            Games
-        </button>
-    </div>
-</nav>
-
-<!-- Main Content -->
-<div class="pt-32 pb-12 px-6 max-w-6xl mx-auto relative z-10 w-full">
-
-    <!-- HOME TAB -->
-    <div id="view-home" class="flex flex-col items-center animate-fade-in w-full">
-        <div class="text-center mb-16 animate-slide-up">
-            <h2 class="text-3xl md:text-5xl font-bold text-white mb-4">Elevate Your Gameplay</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Premium script execution with industry-leading security and performance.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mb-16 animate-slide-up" style="animation-delay: 0.1s;">
-            <div class="glass-panel p-8 rounded-2xl group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-                <div class="w-12 h-12 bg-eclipse-purple/10 rounded-xl flex items-center justify-center text-eclipse-purple mb-4 group-hover:scale-110 transition-transform">
-                    <i data-lucide="shield-check" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">Undetected</h3>
-                <p class="text-sm text-gray-400">Advanced bypass methods ensuring your account safety remains our top priority. Play with confidence.</p>
-            </div>
-
-            <div class="glass-panel p-8 rounded-2xl group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-                <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 mb-4 group-hover:scale-110 transition-transform">
-                    <i data-lucide="gem" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">Paid & Free Versions</h3>
-                <p class="text-sm text-gray-400">Whether you're just starting or need professional power, we have a plan that fits your needs perfectly.</p>
-            </div>
-
-            <div class="glass-panel p-8 rounded-2xl group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-                <div class="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
-                    <i data-lucide="star" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">Premium Quality</h3>
-                <p class="text-sm text-gray-400">Meticulously crafted code optimized for performance. No crashes, no lag, just pure execution.</p>
-            </div>
-
-            <div class="glass-panel p-8 rounded-2xl group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-                <div class="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center text-green-400 mb-4 group-hover:scale-110 transition-transform">
-                    <i data-lucide="zap" class="w-6 h-6"></i>
-                </div>
-                <h3 class="text-xl font-bold text-white mb-2">Frequent Updates</h3>
-                <p class="text-sm text-gray-400">Always ahead of the curve. We push updates instantly when game versions change or new features drop.</p>
-            </div>
-        </div>
-
-        <a href="https://discord.gg/PbDJmQWbhQ" target="_blank" class="animate-slide-up group relative inline-flex items-center justify-center px-8 py-4 font-bold text-white transition-all duration-200 bg-[#5865F2] font-mono rounded-xl hover:bg-[#4752C4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5865F2] hover:shadow-[0_0_30px_-5px_rgba(88,101,242,0.6)] hover:-translate-y-1" style="animation-delay: 0.2s;">
-            <i data-lucide="message-circle" class="w-6 h-6 mr-3"></i>
-            <span>Join Community Discord</span>
-            <div class="absolute inset-0 rounded-xl ring-2 ring-white/20 group-hover:ring-white/40 transition-all"></div>
-        </a>
-    </div>
-
-    <!-- GAMES TAB -->
-    <div id="view-games" class="hidden animate-fade-in w-full">
+    // Tokenizer for rendering with highlights
+    const renderLine = (lineContent) => {
+        // Split by strings first, then identifiers
+        const tokens = lineContent.split(/((?:["'])(?:(?=(\\?))\2.)*?\1|\b[a-zA-Z_][a-zA-Z0-9_]*\b)/g);
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+        return tokens.map((part, index) => {
+            if (!part) return null;
+
+            // Check String Match (High Priority)
+            if ((part.startsWith('"') || part.startsWith("'")) && stringMatches.has(part)) {
+                return <span key={index} className="text-green-300 font-bold bg-green-900/40 px-0.5 rounded border-b border-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]">{part}</span>;
+            }
+
+            // Check Exact Identifier Match (Variable/Function/Table)
+            if (matches.has(part)) {
+                const style = colorTheme === "red" 
+                    ? "text-red-100 font-bold bg-red-600/80 px-1 rounded shadow-[0_0_10px_rgba(220,38,38,0.6)]" 
+                    : "text-cyan-100 font-bold bg-cyan-600/80 px-1 rounded shadow-[0_0_10px_rgba(8,145,178,0.6)]";
+                return <span key={index} className={style}>{part}</span>;
+            }
+
+            // Keywords
+            if (LUA_KEYWORDS.has(part)) return <span key={index} className="text-purple-400">{part}</span>;
             
-            <!-- Left Column: FREE -->
-            <div class="flex flex-col gap-6">
-                <div class="flex items-center gap-3 mb-2 border-b border-eclipse-border/50 pb-4">
-                    <div class="bg-green-500/10 p-2 rounded-lg text-green-400">
-                        <i data-lucide="unlock" class="w-5 h-5"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white">Free Scripts</h2>
-                </div>
+            // Unmatched Strings
+            if (part.startsWith('"') || part.startsWith("'")) return <span key={index} className="text-green-600">{part}</span>;
 
-                <!-- Football Fusion 2 Card (Free) -->
-                <a href="https://www.roblox.com/games/8204899140/Football-Fusion-2" target="_blank" class="block glass-panel rounded-2xl overflow-hidden group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1 cursor-pointer">
-                    <div class="h-40 bg-gray-800/50 relative overflow-hidden group-hover:bg-gray-800/70 transition-colors">
-                        <img src="https://tr.rbxcdn.com/180DAY-4318e112c0ca37c50a31c33f40f3d59f/768/432/Image/Webp/noFilter" alt="Football Fusion 2" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                    </div>
-                    <div class="h-[1px] bg-eclipse-border w-full group-hover:bg-eclipse-purple/30 transition-colors"></div>
-                    <div class="p-5 flex justify-between items-center">
-                        <h3 class="font-bold text-lg text-white group-hover:text-eclipse-purple transition-colors">Football Fusion 2</h3>
-                        <div class="flex items-center gap-0.5 text-amber-400 filter drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]">
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                        </div>
-                    </div>
-                </a>
+            // Default
+            return <span key={index} className="text-gray-400">{part}</span>;
+        });
+    };
 
-                <!-- Basketball Legends Card (Free) -->
-                <a href="https://www.roblox.com/games/14259168147/Basketball-Legends" target="_blank" class="block glass-panel rounded-2xl overflow-hidden group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1 cursor-pointer">
-                    <div class="h-40 bg-gray-800/50 relative overflow-hidden group-hover:bg-gray-800/70 transition-colors">
-                        <img src="https://tr.rbxcdn.com/180DAY-0b50f58c4dcc184441714b7e88c6be42/768/432/Image/Webp/noFilter" alt="Basketball Legends" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                    </div>
-                    <div class="h-[1px] bg-eclipse-border w-full group-hover:bg-eclipse-purple/30 transition-colors"></div>
-                    <div class="p-5 flex justify-between items-center">
-                        <h3 class="font-bold text-lg text-white group-hover:text-eclipse-purple transition-colors">Basketball Legends</h3>
-                        <div class="flex items-center gap-0.5 text-amber-400 filter drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]">
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                        </div>
-                    </div>
-                </a>
-
+    return (
+        <div className="flex flex-col h-full bg-[#0a0a0a] border border-gray-800 rounded-lg overflow-hidden shadow-2xl">
+            <div className="bg-[#111] px-4 py-3 border-b border-gray-800 flex justify-between items-center bg-gradient-to-r from-gray-900 to-black">
+                <span className={`font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${colorTheme === 'red' ? 'text-red-400' : 'text-cyan-400'}`}>
+                    <Code className="w-4 h-4" /> {title}
+                </span>
+                <span className="text-[10px] font-mono text-gray-500 bg-gray-900 px-2 py-1 rounded-full border border-gray-800">{lines.length} LOC (CLEAN)</span>
             </div>
-
-            <!-- Right Column: PAID -->
-            <div class="flex flex-col gap-6">
-                <div class="flex items-center gap-3 mb-2 border-b border-eclipse-border/50 pb-4">
-                    <div class="bg-eclipse-purple/10 p-2 rounded-lg text-eclipse-purple">
-                        <i data-lucide="crown" class="w-5 h-5"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-white">Paid Scripts</h2>
-                </div>
-
-                <!-- Football Fusion 2 Card -->
-                <a href="https://www.roblox.com/games/8204899140/Football-Fusion-2" target="_blank" class="block glass-panel rounded-2xl overflow-hidden group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1 cursor-pointer">
-                    <div class="h-40 bg-gray-800/50 relative overflow-hidden group-hover:bg-gray-800/70 transition-colors">
-                        <img src="https://tr.rbxcdn.com/180DAY-4318e112c0ca37c50a31c33f40f3d59f/768/432/Image/Webp/noFilter" alt="Football Fusion 2" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                        <div class="absolute top-3 right-3 bg-eclipse-purple/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-white/10">
-                            PREMIUM
+            <div className="flex-1 overflow-auto p-0 font-mono text-xs md:text-sm custom-scrollbar bg-black/50 backdrop-blur-sm">
+                {lines.map((line, i) => (
+                    <div key={i} className="flex hover:bg-white/5 transition-colors group">
+                        <span className="w-10 flex-shrink-0 text-right text-gray-600 select-none pr-3 border-r border-gray-800 bg-[#050505] py-0.5 font-mono text-[10px] pt-1 group-hover:text-gray-400 transition-colors">{i + 1}</span>
+                        <div className="pl-3 py-0.5 whitespace-pre break-all relative">
+                            {renderLine(line)}
                         </div>
                     </div>
-                    <div class="h-[1px] bg-eclipse-border w-full group-hover:bg-eclipse-purple/30 transition-colors"></div>
-                    <div class="p-5 flex justify-between items-center">
-                        <h3 class="font-bold text-lg text-white group-hover:text-eclipse-purple transition-colors">Football Fusion 2</h3>
-                        <div class="flex items-center gap-0.5 text-amber-400 filter drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]">
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Basketball Legends Card (Newly Added to Paid) -->
-                <a href="https://www.roblox.com/games/14259168147/Basketball-Legends" target="_blank" class="block glass-panel rounded-2xl overflow-hidden group hover:border-eclipse-purple/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1 cursor-pointer">
-                    <div class="h-40 bg-gray-800/50 relative overflow-hidden group-hover:bg-gray-800/70 transition-colors">
-                        <img src="https://tr.rbxcdn.com/180DAY-0b50f58c4dcc184441714b7e88c6be42/768/432/Image/Webp/noFilter" alt="Basketball Legends" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
-                        <div class="absolute top-3 right-3 bg-eclipse-purple/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-white/10">
-                            PREMIUM
-                        </div>
-                    </div>
-                    <div class="h-[1px] bg-eclipse-border w-full group-hover:bg-eclipse-purple/30 transition-colors"></div>
-                    <div class="p-5 flex justify-between items-center">
-                        <h3 class="font-bold text-lg text-white group-hover:text-eclipse-purple transition-colors">Basketball Legends</h3>
-                        <div class="flex items-center gap-0.5 text-amber-400 filter drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]">
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                            <i data-lucide="star" class="w-4 h-4 fill-current"></i>
-                        </div>
-                    </div>
-                </a>
-
+                ))}
             </div>
-
         </div>
+    );
+};
+
+const DashboardView = ({ scanHistory, clearHistory }) => (
+  <div className="space-y-6 animate-fade-in p-2 font-tech">
+    <div className="flex justify-between items-end mb-6">
+        <h2 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">DASHBOARD_OVERVIEW</h2>
+        {scanHistory.length > 0 && (
+            <button 
+                onClick={clearHistory}
+                className="text-xs text-red-400 hover:text-red-300 flex items-center gap-2 border border-red-900/30 px-3 py-1 rounded bg-red-900/10 transition-colors hover:bg-red-900/20"
+            >
+                <Trash2 className="w-3 h-3" /> CLEAR DATA
+            </button>
+        )}
     </div>
 
-</div>
+    {scanHistory.length === 0 ? (
+      <div className="flex flex-col items-center justify-center h-64 border border-dashed border-purple-900/50 rounded-xl text-gray-500 bg-purple-900/5">
+        <Activity className="w-12 h-12 mb-4 opacity-50 text-purple-500 animate-pulse" />
+        <p className="font-mono text-sm text-white">NO SCAN DATA AVAILABLE</p>
+        <p className="text-xs mt-2 text-gray-400">Go to Scanner to initialize a comparison.</p>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {scanHistory.map((scan, index) => (
+          <div key={index} className="bg-black border border-purple-900/50 p-6 rounded-xl hover:border-purple-500 transition-all duration-300 shadow-[0_0_15px_rgba(88,28,135,0.1)] hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] group relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-24 h-24 bg-purple-900/10 rounded-full blur-2xl pointer-events-none group-hover:bg-purple-600/10 transition-colors"></div>
+             
+             {/* Card Header with Filenames */}
+             <div className="mb-4 border-b border-purple-900/30 pb-3">
+                <div className="flex items-center space-x-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-purple-900/30 text-purple-400">
+                        <FileCode className="w-4 h-4" />
+                    </div>
+                    <span className="text-white font-bold font-mono text-xs tracking-wider uppercase">Scan Report #{scanHistory.length - index}</span>
+                </div>
+                
+                <div className="flex flex-col gap-1 mt-2">
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-cyan-300 truncate">
+                        <span className="bg-cyan-900/30 px-1 rounded text-cyan-500">ORIG</span>
+                        {scan.originalName}
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-red-300 truncate">
+                        <span className="bg-red-900/30 px-1 rounded text-red-500">SUSP</span>
+                        {scan.suspectName}
+                    </div>
+                </div>
+             </div>
 
-<script>
-lucide.createIcons();
+             <div className="space-y-4">
+                <div>
+                    <p className="text-purple-400 text-xs uppercase tracking-widest font-semibold mb-1">Match Confidence</p>
+                    <div className="flex items-end gap-2">
+                        <h3 className={`text-4xl font-bold font-mono leading-none ${scan.percentage > 50 ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'text-white'}`}>
+                            {scan.percentage}%
+                        </h3>
+                    </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 space-y-2">
+                    <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Matched Names:</span>
+                        <span className="text-white font-mono">{scan.matchesFound}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">Matched Strings:</span>
+                        <span className="text-green-400 font-mono font-bold">{scan.stringMatches}</span>
+                    </div>
+                </div>
+                
+                <div className="text-[10px] text-gray-500 text-right font-mono">
+                    Scanned at: {scan.timestamp}
+                </div>
+             </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
 
-function switchTab(tabId) {
-    document.getElementById('view-home').classList.add('hidden');
-    document.getElementById('view-games').classList.add('hidden');
-    
-    document.getElementById('btn-home').classList.remove('active');
-    document.getElementById('btn-games').classList.remove('active');
-    
-    const view = document.getElementById('view-' + tabId);
-    view.classList.remove('hidden');
-    
-    view.classList.remove('animate-fade-in');
-    void view.offsetWidth;
-    view.classList.add('animate-fade-in');
+const ScannerView = ({ onScanComplete }) => {
+  const [showPanel, setShowPanel] = useState(false);
+  const [originalFile, setOriginalFile] = useState(null);
+  const [suspectFile, setSuspectFile] = useState(null);
+  const [originalContent, setOriginalContent] = useState("");
+  const [suspectContent, setSuspectContent] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+  const [fullscreen, setFullscreen] = useState(false);
 
-    document.getElementById('btn-' + tabId).classList.add('active');
+  const fileInputRef1 = useRef(null);
+  const fileInputRef2 = useRef(null);
+
+  const handleFileRead = (file, setFileState, setContentState) => {
+    if (file) {
+        setFileState(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // STRIP COMMENTS IMMEDIATELY ON LOAD
+            const raw = e.target.result;
+            const cleaned = stripLuaComments(raw);
+            setContentState(cleaned);
+        };
+        reader.readAsText(file);
+    }
+  };
+
+  const startScan = () => {
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+        // Deep analysis of the CLEANED (comment-free) code
+        const origData = extractAdvancedAnalysis(originalContent);
+        const suspData = extractAdvancedAnalysis(suspectContent);
+        
+        const matches = new Set();
+        const stringMatches = new Set();
+        let matchCount = 0;
+        let strCount = 0;
+
+        // 1. Exact Identifier Analysis (Vars, Functions, Table Keys)
+        origData.identifiers.forEach(id => {
+            if (suspData.identifiers.has(id)) {
+                matches.add(id);
+                matchCount++;
+            }
+        });
+
+        // 2. Exact String Literal Analysis (e.g. "RunService", "Player", custom strings)
+        origData.strings.forEach(str => {
+            if (suspData.strings.has(str)) {
+                stringMatches.add(str);
+                strCount++;
+            }
+        });
+
+        // Scoring: We weight strings slightly higher as they are harder to obfuscate automatically
+        const totalItems = origData.identifiers.size + origData.strings.size;
+        const totalFound = matchCount + strCount;
+        
+        const percentage = totalItems > 0 
+            ? ((totalFound / totalItems) * 100).toFixed(1) 
+            : 0;
+        
+        const result = {
+            originalName: originalFile.name,
+            suspectName: suspectFile.name,
+            totalOriginal: totalItems,
+            matchesFound: matchCount,
+            stringMatches: strCount,
+            percentage: percentage,
+            matches: Array.from(matches),
+            stringMatchesSet: Array.from(stringMatches),
+            originalCode: originalContent,
+            suspectCode: suspectContent,
+            timestamp: new Date().toLocaleTimeString()
+        };
+
+        setScanResult({ 
+            ...result, 
+            matches: new Set(result.matches),
+            stringMatchesSet: new Set(result.stringMatchesSet)
+        });
+        onScanComplete(result);
+        setIsProcessing(false);
+        setShowPanel(false);
+    }, 2000); // Effect delay
+  };
+
+  return (
+    <div className={`flex flex-col animate-fade-in relative font-tech ${fullscreen ? 'fixed inset-0 z-50 bg-black p-4' : 'h-full p-2'}`}>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-white tracking-wide flex items-center gap-3 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+            SCANNER_MODULE <span className="text-xs bg-purple-900/50 px-2 py-0.5 rounded text-purple-300 border border-purple-500/30">V3.0 ADVANCED</span>
+        </h2>
+        {scanResult && (
+             <button onClick={() => setFullscreen(!fullscreen)} className="text-gray-400 hover:text-white transition-colors bg-white/5 p-2 rounded hover:bg-white/10">
+                {fullscreen ? <Minimize2 className="w-5 h-5"/> : <Maximize2 className="w-5 h-5"/>}
+             </button>
+        )}
+      </div>
+
+      {!scanResult ? (
+        <div className="flex-1 bg-black border border-purple-900/50 rounded-xl p-8 flex flex-col items-center justify-center relative overflow-hidden group shadow-[0_0_30px_rgba(88,28,135,0.1)]">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(88,28,135,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(88,28,135,0.1)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
+          
+          <div className="relative mb-8 group-hover:scale-110 transition-transform duration-500">
+              <div className="absolute inset-0 bg-purple-500/20 blur-3xl rounded-full animate-pulse"></div>
+              <Scan className="w-20 h-20 text-white relative z-10 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+          </div>
+          
+          <p className="text-white text-2xl mb-2 font-bold tracking-wide text-center">ADVANCED SOURCE COMPARISON</p>
+          <p className="text-gray-400 text-sm mb-10 font-mono tracking-wide text-center max-w-md">
+            Detects shared variables, functions, strings, and table structures while ignoring comments.
+          </p>
+          
+          <button 
+            onClick={() => setShowPanel(true)}
+            className="relative px-12 py-4 bg-purple-600 hover:bg-white hover:text-black text-white transition-all duration-300 uppercase tracking-widest font-bold text-sm rounded-lg group-hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] overflow-hidden"
+          >
+            <span className="relative z-10 flex items-center gap-2">LOAD SOURCE FILES <ArrowRight className="w-4 h-4" /></span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col bg-black border border-purple-900/50 rounded-xl overflow-hidden shadow-2xl">
+             {/* Toolbar */}
+             <div className="p-4 border-b border-purple-900/50 flex justify-between items-center bg-purple-900/10 backdrop-blur-sm">
+                <div className="flex gap-6 text-sm font-mono">
+                    <div className="flex items-center gap-2 text-red-400 font-bold bg-red-900/10 px-3 py-1 rounded border border-red-500/30">
+                        <AlertTriangle className="w-4 h-4"/> 
+                        {scanResult.matchesFound} IDENTIFIERS
+                    </div>
+                    <div className="flex items-center gap-2 text-green-400 font-bold bg-green-900/10 px-3 py-1 rounded border border-green-500/30">
+                        <Terminal className="w-4 h-4"/> 
+                        {scanResult.stringMatches} STRINGS
+                    </div>
+                </div>
+                <button onClick={() => setScanResult(null)} className="text-xs text-gray-300 hover:text-white flex items-center gap-1 border border-white/20 px-3 py-1.5 rounded hover:bg-white/10 transition-colors">
+                    <X className="w-3 h-3" /> CLOSE REPORT
+                </button>
+             </div>
+
+             {/* Dual Code View */}
+             <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+                 {/* Left: Original */}
+                 <div className="flex-1 border-b md:border-b-0 md:border-r border-purple-900/30 flex flex-col min-h-0">
+                     <CodeViewer 
+                        title={`ORIGINAL: ${scanResult.originalName}`} 
+                        code={scanResult.originalCode} 
+                        matches={scanResult.matches} 
+                        stringMatches={scanResult.stringMatchesSet}
+                        colorTheme="cyan"
+                    />
+                 </div>
+                 
+                 {/* Right: Suspect */}
+                 <div className="flex-1 flex flex-col min-h-0">
+                    <CodeViewer 
+                        title={`SUSPECT: ${scanResult.suspectName}`}
+                        code={scanResult.suspectCode} 
+                        matches={scanResult.matches} 
+                        stringMatches={scanResult.stringMatchesSet}
+                        colorTheme="red"
+                    />
+                 </div>
+             </div>
+        </div>
+      )}
+
+      {/* SCAN PANEL MODAL */}
+      {showPanel && (
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-black border border-white/10 w-full max-w-lg rounded-2xl shadow-[0_0_60px_rgba(147,51,234,0.3)] animate-fade-in relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-white to-purple-600"></div>
+                
+                <button 
+                    onClick={() => setShowPanel(false)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
+                <div className="p-8">
+                    <h3 className="text-2xl font-bold text-white mb-8 font-tech border-b border-white/10 pb-4 flex items-center gap-2">
+                        <Database className="w-6 h-6 text-purple-500"/> SOURCE LOADER
+                    </h3>
+                    
+                    <div className="space-y-6">
+                        {/* Input 1 */}
+                        <div>
+                            <label className="block text-cyan-400 text-xs font-bold mb-2 uppercase tracking-wider flex justify-between">
+                                <span>Original Source (.lua)</span>
+                                <span className="text-gray-500 font-mono text-[10px]">COMMENTS WILL BE REMOVED</span>
+                            </label>
+                            <div 
+                                onClick={() => fileInputRef1.current.click()}
+                                className={`h-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all ${originalFile ? 'border-cyan-500 bg-cyan-900/20 shadow-[0_0_15px_rgba(8,145,178,0.2)]' : 'border-gray-700 bg-white/5 hover:border-cyan-500 hover:bg-cyan-900/10'}`}
+                            >
+                                <input 
+                                    type="file" 
+                                    accept=".lua,.txt"
+                                    ref={fileInputRef1} 
+                                    className="hidden"
+                                    onChange={(e) => handleFileRead(e.target.files[0], setOriginalFile, setOriginalContent)}
+                                />
+                                {originalFile ? (
+                                    <span className="text-cyan-400 text-sm flex items-center gap-2 font-bold"><CheckCircle className="w-5 h-5" /> {originalFile.name}</span>
+                                ) : (
+                                    <span className="text-gray-400 text-sm font-mono">Select Original File</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Input 2 */}
+                        <div className="relative">
+                            <label className="block text-red-400 text-xs font-bold mb-2 uppercase tracking-wider flex justify-between">
+                                <span>Suspect Source (.lua)</span>
+                                <span className="text-gray-500 font-mono text-[10px]">COMMENTS WILL BE REMOVED</span>
+                            </label>
+                            <div 
+                                onClick={() => fileInputRef2.current.click()}
+                                className={`h-16 border-2 border-dashed rounded-xl flex items-center justify-center cursor-pointer transition-all ${suspectFile ? 'border-red-500 bg-red-900/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-gray-700 bg-white/5 hover:border-red-500 hover:bg-red-900/10'}`}
+                            >
+                                <input 
+                                    type="file" 
+                                    accept=".lua,.txt" 
+                                    ref={fileInputRef2}
+                                    className="hidden"
+                                    onChange={(e) => handleFileRead(e.target.files[0], setSuspectFile, setSuspectContent)}
+                                />
+                                {suspectFile ? (
+                                    <span className="text-red-400 text-sm flex items-center gap-2 font-bold"><AlertTriangle className="w-5 h-5" /> {suspectFile.name}</span>
+                                ) : (
+                                    <span className="text-gray-400 text-sm font-mono">Select Suspect File</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="mt-10">
+                        {originalFile && suspectFile ? (
+                            <button 
+                                onClick={startScan}
+                                disabled={isProcessing}
+                                className="w-full py-4 bg-white hover:bg-gray-200 text-black font-bold uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transform hover:-translate-y-1"
+                            >
+                                {isProcessing ? (
+                                    <span className="animate-pulse">ANALYZING CODE STRUCTURE...</span>
+                                ) : (
+                                    <>RUN DEEP SCAN <ArrowRight className="w-5 h-5" /></>
+                                )}
+                            </button>
+                        ) : (
+                            <div className="w-full py-4 bg-white/5 text-gray-500 font-bold uppercase tracking-widest rounded-lg text-center cursor-not-allowed border border-white/5">
+                                Awaiting Files...
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Initialize state from local storage
+  const [scanHistory, setScanHistory] = useState(() => {
+    try {
+        const saved = localStorage.getItem('eclipse_scan_history_v3');
+        return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+        return [];
+    }
+  });
+
+  // Save to local storage whenever history changes
+  useEffect(() => {
+    localStorage.setItem('eclipse_scan_history_v3', JSON.stringify(scanHistory));
+  }, [scanHistory]);
+
+  const handleScanComplete = (result) => {
+    setScanHistory(prev => [result, ...prev]);
+  };
+
+  const clearHistory = () => {
+      setScanHistory([]);
+      localStorage.removeItem('eclipse_scan_history_v3');
+  }
+
+  return (
+    <div className="flex h-screen w-full bg-black text-white selection:bg-purple-500 selection:text-white overflow-hidden font-tech">
+      
+      {/* Global Styles for Animations and Fonts */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap');
+        
+        .font-tech {
+            font-family: 'Rajdhani', sans-serif;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Custom scrollbar for code blocks */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #050505; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      {/* Sidebar */}
+      <div className="w-20 md:w-64 border-r border-purple-900/30 flex flex-col flex-shrink-0 bg-black relative z-20">
+        
+        {/* Top Left: Shield Icon */}
+        <div className="h-24 flex items-center px-0 md:px-8 justify-center md:justify-start relative">
+            <div className="absolute inset-0 bg-purple-900/10 blur-xl"></div>
+            <Shield className="w-8 h-8 text-white relative z-10 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+            <span className="ml-4 font-bold text-2xl tracking-[0.15em] text-white hidden md:block relative z-10 font-tech">ECLIPSE</span>
+        </div>
+
+        {/* Horizontal Divider */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50 shadow-[0_0_10px_#a855f7]"></div>
+
+        {/* Navigation / Tab Container */}
+        <div className="flex-1 py-8 flex flex-col gap-2 px-3">
+          <p className="px-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4 hidden md:block font-mono">
+            Main Modules
+          </p>
+
+          {/* Dashboard Tab */}
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 group border border-transparent ${
+              activeTab === 'dashboard' 
+              ? 'bg-white/10 text-white border-l-4 border-l-purple-500 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)]' 
+              : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <LayoutDashboard className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeTab === 'dashboard' ? 'text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'text-current'}`} />
+            <span className="hidden md:block font-bold tracking-wide text-lg">Dashboard</span>
+          </button>
+
+          {/* Scanner Tab */}
+          <button 
+            onClick={() => setActiveTab('scanner')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 group border border-transparent ${
+              activeTab === 'scanner' 
+              ? 'bg-white/10 text-white border-l-4 border-l-purple-500 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)]' 
+              : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Scan className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeTab === 'scanner' ? 'text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]' : 'text-current'}`} />
+            <span className="hidden md:block font-bold tracking-wide text-lg">Scanner</span>
+          </button>
+        </div>
+
+        {/* Footer Area */}
+        <div className="p-6 border-t border-purple-900/30">
+          <div className="flex items-center space-x-3 opacity-70 hover:opacity-100 transition-opacity">
+            <div className="relative">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"></div>
+            </div>
+            <span className="text-xs text-gray-400 font-mono tracking-wider hidden md:block">SYSTEM_ONLINE</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto bg-black p-4 md:p-10 relative">
+        {/* Ambient Glows */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-white/5 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col">
+             {activeTab === 'dashboard' ? (
+                <DashboardView scanHistory={scanHistory} clearHistory={clearHistory} />
+             ) : (
+                <ScannerView onScanComplete={handleScanComplete} />
+             )}
+        </div>
+      </div>
+    </div>
+  );
 }
-</script>
-</body>
-</html>
