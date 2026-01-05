@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eclipse V4.1 - Deep Structural Lua Scanner</title>
+    <title>Eclipse V4.2 - High Precision Lua Scanner</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -103,7 +103,8 @@
             Minimize2: (p) => <LucideIcon name="Minimize2" {...p} />,
             Maximize2: (p) => <LucideIcon name="Maximize2" {...p} />,
             Zap: (p) => <LucideIcon name="Zap" {...p} />,
-            Fingerprint: (p) => <LucideIcon name="Fingerprint" {...p} />
+            Fingerprint: (p) => <LucideIcon name="Fingerprint" {...p} />,
+            Microscope: (p) => <LucideIcon name="Microscope" {...p} />
         };
 
         // --- DEEP ANALYSIS ENGINE ---
@@ -130,21 +131,18 @@
             UNKNOWN: 'UNKNOWN'
         };
 
-        // Improved Tokenizer that handles newlines for line-matching
         const tokenize = (code) => {
             const tokens = [];
-            // We do NOT strip everything initially, we handle comments as skippable tokens
-            
             const patterns = [
-                { type: null, regex: /--\[\[[\s\S]*?\]\]/y }, // Block comment (skip)
-                { type: null, regex: /--.*/y }, // Line comment (skip)
+                { type: null, regex: /--\[\[[\s\S]*?\]\]/y }, 
+                { type: null, regex: /--.*/y }, 
                 { type: TokenType.STRING, regex: /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/y },
-                { type: TokenType.STRING, regex: /\[(=*)\[[\s\S]*?\]\1\]/y }, // Long strings
+                { type: TokenType.STRING, regex: /\[(=*)\[[\s\S]*?\]\1\]/y }, 
                 { type: TokenType.NUMBER, regex: /0x[0-9a-fA-F]+|\d+(\.\d+)?([eE][+-]?\d+)?/y },
                 { type: TokenType.OPERATOR, regex: /(\.\.\.|==|~=|<=|>=|\.\.|[\+\-\*\/%\^#=<>;:,\.\(\)\[\]\{\}])/y },
                 { type: TokenType.IDENTIFIER, regex: /[a-zA-Z_][a-zA-Z0-9_]*/y },
                 { type: TokenType.NEWLINE, regex: /\n/y },
-                { type: null, regex: /\s+/y } // Skip other whitespace
+                { type: null, regex: /\s+/y } 
             ];
 
             let cursor = 0;
@@ -187,20 +185,39 @@
             return token.value; 
         };
 
+        // NEW: Checks if the mapping of variable names is consistent between two token sequences
+        const isVariableConsistent = (tokensA, tokensB) => {
+            if (tokensA.length !== tokensB.length) return false;
+            
+            const mapAtoB = {};
+            const mapBtoA = {};
+            
+            for (let i = 0; i < tokensA.length; i++) {
+                const t1 = tokensA[i];
+                const t2 = tokensB[i];
+                
+                // We only care about consistency for identifiers that are generic variables
+                if (t1.type === TokenType.IDENTIFIER && t2.type === TokenType.IDENTIFIER) {
+                    // Check logic: if t1 is mapped to something, it MUST be t2
+                    if (mapAtoB[t1.value] && mapAtoB[t1.value] !== t2.value) return false;
+                    // Check reverse: if t2 is mapped to something, it MUST be t1
+                    if (mapBtoA[t2.value] && mapBtoA[t2.value] !== t1.value) return false;
+                    
+                    mapAtoB[t1.value] = t2.value;
+                    mapBtoA[t2.value] = t1.value;
+                }
+            }
+            return true;
+        };
+
         const performDeepAnalysis = (tokens1, tokens2) => {
-            // Filter out newlines for the Sliding Window check (tokens1_clean)
-            // But keep them for Line Structural check
             const cleanT1 = tokens1.filter(t => t.type !== TokenType.NEWLINE);
             const cleanT2 = tokens2.filter(t => t.type !== TokenType.NEWLINE);
 
-            // --- STRATEGY 1: LINE-BY-LINE STRUCTURAL MATCH ---
-            // "Grab a piece of code from the line... scan if there is a code piece... appearance to that"
-            
             const matchedIndices1 = new Set();
             const matchedIndices2 = new Set();
             const renamedVars = new Set();
 
-            // Helper to break tokens into lines based on NEWLINE token
             const getLines = (tokens) => {
                 const lines = [];
                 let currentLine = [];
@@ -219,57 +236,64 @@
             const lines1 = getLines(tokens1);
             const lines2 = getLines(tokens2);
 
-            // Create signatures for every line in Original
-            // Signature = abstract values joined
-            const lineSignatures = new Map(); // Sig -> [TokenIndices]
+            const lineSignatures = new Map(); // Sig -> Array of LineTokenArrays
 
+            // Build Signature Map for Original
             lines1.forEach((lineTokens) => {
-                if (lineTokens.length < 3) return; // Skip very short lines
+                // Heuristic: Ignore very short lines (false positives) like "end" or "do"
+                if (lineTokens.length < 3) return; 
+                
                 const sig = lineTokens.map(getAbstractValue).join('|');
-                // Store the indices of tokens in this line
-                const indices = lineTokens.map(t => tokens1.indexOf(t)); // Note: Using indexOf on object ref is slow, better to use stored index if we had ID. 
-                // Optimization: tokens objects are refs.
-                // Actually, let's map signature to the abstract signature itself for fast lookup
-                lineSignatures.set(sig, true); 
+                if (!lineSignatures.has(sig)) {
+                    lineSignatures.set(sig, []);
+                }
+                lineSignatures.get(sig).push(lineTokens);
             });
 
-            // Scan Suspect Lines against Signatures
+            // Scan Suspect Lines
             lines2.forEach((lineTokens) => {
                 if (lineTokens.length < 3) return;
                 const sig = lineTokens.map(getAbstractValue).join('|');
                 
                 if (lineSignatures.has(sig)) {
-                    // Line Match Found!
-                    lineTokens.forEach(t => {
-                        const idx = tokens2.indexOf(t);
-                        if (idx !== -1) matchedIndices2.add(idx);
-                    });
+                    const candidates = lineSignatures.get(sig);
                     
-                    // We need to find *which* line in original matched to highlight it (heuristic: first match)
-                    // Re-scan lines1 to find matching sig (inefficient but accurate for visual)
-                    for (let l1 of lines1) {
-                         const s1 = l1.map(getAbstractValue).join('|');
-                         if (s1 === sig) {
-                             l1.forEach(t => {
-                                 const idx = tokens1.indexOf(t);
-                                 if (idx !== -1) matchedIndices1.add(idx);
-                             });
-                             
-                             // Detect renames on this line
-                             for(let k=0; k<l1.length && k<lineTokens.length; k++) {
-                                 if (l1[k].type === TokenType.IDENTIFIER && lineTokens[k].type === TokenType.IDENTIFIER) {
-                                     if (l1[k].value !== lineTokens[k].value) {
-                                         renamedVars.add(`${l1[k].value} -> ${lineTokens[k].value}`);
-                                     }
-                                 }
-                             }
-                             break; // Highlight first occurrence only
-                         }
+                    // Check Variable Consistency against all candidates with this signature
+                    let bestMatch = null;
+
+                    for (const candidateTokens of candidates) {
+                        if (isVariableConsistent(candidateTokens, lineTokens)) {
+                            bestMatch = candidateTokens;
+                            break;
+                        }
+                    }
+
+                    if (bestMatch) {
+                        // Mark Suspect Tokens
+                        lineTokens.forEach(t => {
+                            const idx = tokens2.indexOf(t);
+                            if (idx !== -1) matchedIndices2.add(idx);
+                        });
+                        
+                        // Mark Original Tokens (heuristic: first consistent match)
+                        bestMatch.forEach(t => {
+                            const idx = tokens1.indexOf(t);
+                            if (idx !== -1) matchedIndices1.add(idx);
+                        });
+
+                        // Log Renames
+                        for(let k=0; k<bestMatch.length && k<lineTokens.length; k++) {
+                            if (bestMatch[k].type === TokenType.IDENTIFIER && lineTokens[k].type === TokenType.IDENTIFIER) {
+                                if (bestMatch[k].value !== lineTokens[k].value) {
+                                    renamedVars.add(`${bestMatch[k].value} -> ${lineTokens[k].value}`);
+                                }
+                            }
+                        }
                     }
                 }
             });
 
-            // --- STRATEGY 2: SLIDING WINDOW (Fallback for obfuscated formatting) ---
+            // --- STRATEGY 2: SLIDING WINDOW (Fallback) ---
             const WINDOW_SIZE = 8;
             const fingerprintMap = new Map();
 
@@ -277,7 +301,7 @@
                 const window = cleanT1.slice(i, i + WINDOW_SIZE);
                 const signature = window.map(getAbstractValue).join('|');
                 if (!fingerprintMap.has(signature)) fingerprintMap.set(signature, []);
-                fingerprintMap.get(signature).push(i);
+                fingerprintMap.get(signature).push(i); // Store start index of window in cleanT1
             }
 
             for (let i = 0; i <= cleanT2.length - WINDOW_SIZE; i++) {
@@ -285,22 +309,41 @@
                 const signature = window.map(getAbstractValue).join('|');
 
                 if (fingerprintMap.has(signature)) {
-                    const originalStarts = fingerprintMap.get(signature);
+                    const originalStartIndices = fingerprintMap.get(signature);
                     
-                    // Mark match in Suspect (Clean indices map back to real tokens?? No, cleanT2 are subsets)
-                    // We need to mark the actual tokens.
-                    window.forEach(t => {
-                        const idx = tokens2.indexOf(t);
-                        if(idx !== -1) matchedIndices2.add(idx);
-                    });
+                    let consistentMatchFound = false;
 
-                    originalStarts.forEach(startIdx => {
-                         const origWindow = cleanT1.slice(startIdx, startIdx + WINDOW_SIZE);
-                         origWindow.forEach(t => {
-                             const idx = tokens1.indexOf(t);
-                             if(idx !== -1) matchedIndices1.add(idx);
-                         });
-                    });
+                    for (const startIdx of originalStartIndices) {
+                        const origWindow = cleanT1.slice(startIdx, startIdx + WINDOW_SIZE);
+                        
+                        if (isVariableConsistent(origWindow, window)) {
+                            // Valid Match
+                            consistentMatchFound = true;
+                            
+                            // Mark Original
+                            origWindow.forEach(t => {
+                                const idx = tokens1.indexOf(t); // Map back to full token list
+                                if(idx !== -1) matchedIndices1.add(idx);
+                            });
+                            
+                            // Log Renames
+                            for(let k=0; k<origWindow.length; k++) {
+                                if (origWindow[k].type === TokenType.IDENTIFIER && window[k].type === TokenType.IDENTIFIER) {
+                                    if (origWindow[k].value !== window[k].value) {
+                                        renamedVars.add(`${origWindow[k].value} -> ${window[k].value}`);
+                                    }
+                                }
+                            }
+                            break; // Only need one valid source
+                        }
+                    }
+
+                    if (consistentMatchFound) {
+                        window.forEach(t => {
+                            const idx = tokens2.indexOf(t);
+                            if(idx !== -1) matchedIndices2.add(idx);
+                        });
+                    }
                 }
             }
 
@@ -316,12 +359,7 @@
             };
         };
 
-
-        // --- COMPONENTS ---
-
-        // Memoized CodeViewer to prevent re-renders of massive DOM
         const CodeViewer = React.memo(({ title, tokens, matchedIndices, colorTheme = "red", isPreview = false }) => {
-            // Optimization: If isPreview is true, only render first X tokens to prevent lag during animation
             const displayTokens = isPreview ? tokens.slice(0, 1000) : tokens;
             const truncated = isPreview && tokens.length > 1000;
 
@@ -338,18 +376,8 @@
                     <div className="flex-1 overflow-auto p-4 font-mono text-xs md:text-sm custom-scrollbar bg-black/50 backdrop-blur-sm">
                         <div className="leading-6 break-words whitespace-pre-wrap">
                             {displayTokens.map((token, i) => {
-                                // Skip newlines in visual rendering if we just want line breaks
                                 if (token.type === TokenType.NEWLINE) return <br key={i}/>;
-
-                                // We need the original index to check matches properly
-                                // Since we sliced, i corresponds to displayTokens index.
-                                // But matchedIndices stores indices relative to FULL token array.
-                                // We need to find the token's real index? 
-                                // Actually, token objects are unique refs in our flow if we don't regenerate them.
-                                // But matchedIndices stores integers.
-                                // If we just use 'i' here, it works because displayTokens is a slice from 0.
                                 const isMatched = matchedIndices.has(i);
-                                
                                 let className = "inline-block px-[1px] rounded-sm transition-all duration-300 ";
                                 
                                 if (isMatched) {
@@ -390,7 +418,7 @@
         const DashboardView = ({ scanHistory, clearHistory }) => (
             <div className="space-y-6 animate-fade-in p-2 font-tech">
                 <div className="flex justify-between items-end mb-6">
-                    <h2 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">DASHBOARD_V4.1</h2>
+                    <h2 className="text-3xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">DASHBOARD_V4.2</h2>
                     {scanHistory.length > 0 && (
                         <button 
                             onClick={clearHistory}
@@ -415,9 +443,9 @@
                         <div className="mb-4 border-b border-purple-900/30 pb-3">
                             <div className="flex items-center space-x-2 mb-2">
                                 <div className="p-1.5 rounded-lg bg-purple-900/30 text-purple-400">
-                                    <Icons.Fingerprint className="w-4 h-4" />
+                                    <Icons.Microscope className="w-4 h-4" />
                                 </div>
-                                <span className="text-white font-bold font-mono text-xs tracking-wider uppercase">Structure Analysis #{scanHistory.length - index}</span>
+                                <span className="text-white font-bold font-mono text-xs tracking-wider uppercase">High Precision Analysis #{scanHistory.length - index}</span>
                             </div>
                             
                             <div className="flex flex-col gap-1 mt-2">
@@ -499,13 +527,11 @@
                 }
             };
 
-            // Memoize tokens to prevent heavy re-calculation on every render
             const originalTokens = useMemo(() => tokenize(originalCode), [originalCode]);
             const suspectTokens = useMemo(() => tokenize(suspectCode), [suspectCode]);
 
             const startDeepScan = () => {
                 setIsProcessing(true);
-                // Artificial delay for UI effect + non-blocking
                 const delay = showLiveScan ? 4000 : 1500; 
                 
                 setTimeout(() => {
@@ -531,7 +557,7 @@
                 <div className={`flex flex-col animate-fade-in relative font-tech ${fullscreen ? 'fixed inset-0 z-50 bg-black p-4' : 'h-full p-2'}`}>
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-3xl font-bold text-white tracking-wide flex items-center gap-3 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                        DEEP_SCANNER <span className="text-xs bg-purple-900/50 px-2 py-0.5 rounded text-purple-300 border border-purple-500/30">V4.1 STRUCTURAL</span>
+                        DEEP_SCANNER <span className="text-xs bg-purple-900/50 px-2 py-0.5 rounded text-purple-300 border border-purple-500/30">V4.2 HIGH PRECISION</span>
                     </h2>
                     {scanResult && (
                         <button onClick={() => setFullscreen(!fullscreen)} className="text-gray-400 hover:text-white transition-colors bg-white/5 p-2 rounded hover:bg-white/10">
@@ -817,7 +843,7 @@
                             <div className="w-2 h-2 rounded-full bg-green-500"></div>
                             <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"></div>
                         </div>
-                        <span className="text-xs text-gray-400 font-mono tracking-wider hidden md:block">V4.1 ONLINE</span>
+                        <span className="text-xs text-gray-400 font-mono tracking-wider hidden md:block">V4.2 ONLINE</span>
                     </div>
                     </div>
                 </div>
